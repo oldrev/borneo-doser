@@ -1,0 +1,23 @@
+{
+    "configurations": [
+        {
+            "name": "esp32-win64",
+            "includePath": [
+                "${workspaceFolder}/main/**",
+                "${env:IDF_PATH}/components/*/include"
+            ],
+            "defines": [
+                "_DEBUG",
+                "UNICODE",
+                "_UNICODE"
+            ],
+            "compilerPath": "/usr/bin/gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "clang-x64",
+            "compileCommands": "${workspaceFolder}/build/compile_commands.json",
+            "configurationProvider": "vector-of-bool.cmake-tools"
+        }
+    ],
+    "version": 4
+}

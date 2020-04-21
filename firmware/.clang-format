@@ -1,0 +1,6 @@
+BasedOnStyle: WebKit
+ColumnLimit: 120
+KeepEmptyLinesAtTheStartOfBlocks: true
+SpaceAfterCStyleCast: false
+SortIncludes: false
+Standard: Cpp11

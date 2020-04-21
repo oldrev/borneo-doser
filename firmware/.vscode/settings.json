@@ -1,0 +1,19 @@
+{
+    "files.associations": {
+        "string.h": "c",
+        "rtc.h": "c",
+        "*.tcc": "c",
+        "chrono": "c",
+        "ctime": "c",
+        "future": "c",
+        "limits": "c",
+        "numeric": "c",
+        "ratio": "c",
+        "streambuf": "c",
+        "tuple": "c",
+        "type_traits": "c",
+        "utility": "c",
+        "bit-utils.h": "c",
+        "cron.h": "c"
+    }
+}

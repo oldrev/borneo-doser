@@ -1,0 +1,1 @@
+ninja.exe -C  %~dp0build clangformat

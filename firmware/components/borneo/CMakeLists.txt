@@ -1,0 +1,17 @@
+FILE(GLOB_RECURSE BORNEO_COMMON_C_SOURCES 
+    "./src/*.c" 
+)
+
+FILE(GLOB_RECURSE BORNEO_COMMON_CPP_SOURCES 
+    "./src/*.cpp" 
+)
+
+SET(BORNEO_COMMON_INCLUDE_DIRS "./include")
+
+
+idf_component_register(
+    SRCS ${BORNEO_COMMON_C_SOURCES} ${BORNEO_COMMON_CPP_SOURCES}
+    INCLUDE_DIRS ${BORNEO_COMMON_INCLUDE_DIRS}
+    REQUIRES json nvs_flash wpa_supplicant
+)
+
