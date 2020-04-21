@@ -39,7 +39,7 @@ int RpcServer_init(RpcRequestHandler* request_handler)
 
 int RpcServer_start()
 {
-    xTaskCreate(tcp_server_task, "rpc-server", 1024 * 8, NULL, 5, NULL);
+    xTaskCreate(tcp_server_task, "rpc-server", 1024 * 8, NULL, tskIDLE_PRIORITY + 5, NULL);
 
     return 0;
 }
