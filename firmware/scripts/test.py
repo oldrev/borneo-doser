@@ -22,6 +22,8 @@ async def invoke_async(method, params):
     rx_buf = await reader.readuntil(separator=b'\0')
     rx_buf = rx_buf[:-1]
     response = json.loads(rx_buf.decode())
+    if('error' in response):
+        raise RuntimeError(response['error'])
 
     writer.close()
     await writer.wait_closed()
@@ -31,8 +33,8 @@ async def invoke_async(method, params):
 async def test_all_methods():
     hello_info = await invoke_async('sys.hello', [])
     print(hello_info)
-    await invoke_async('doser.pump_until', [0, 3000])
-    return
+    #await invoke_async('doser.pump_until', [0, 3000])
+    #return
     #await invoke_async('doser.pump', [0, 1.0])
 
 
@@ -42,9 +44,11 @@ async def test_all_methods():
     # 测试设置排程
     job1 = {
         'name': '添加Mg',
-        "when": { "dow": [1,3,5,6,7], "hours": [0, 6, 12, 18], "minute": 29 },
+        "when": { "dow": [1, 2, 3, 4, 5, 6, 7], "hours": list(range(0, 24)), "minute": 45 },
         "payloads": [0.8, 0.2, 0, 0]
     }
+    print('-------------------------------')
+    print (job1)
     await invoke_async('doser.schedule_set', [job1])
 
     # 获取设置后的排程

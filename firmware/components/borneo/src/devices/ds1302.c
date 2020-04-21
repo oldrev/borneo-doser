@@ -29,6 +29,8 @@
 #define DS1302_REG_WP 0x8E
 #define DS1302_REG_BURST 0xBE
 
+static const char* TAG = "DS1302";
+
 static void begin_read(uint8_t address);
 static void begin_write(uint8_t address);
 static uint8_t read_byte();

@@ -47,7 +47,7 @@ int Cron_from_json(Cron* cron, const cJSON* cron_json)
         return -1;
     }
     int hours_array_size = cJSON_GetArraySize(hours_json);
-    if (hours_array_size == 0 || hours_array_size > 23) {
+    if (hours_array_size == 0 || hours_array_size > 24) {
         return -1;
     }
     cJSON* hour_json;

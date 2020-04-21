@@ -75,6 +75,7 @@ static void on_time_sync(struct timeval* tv)
         .hour = time_info.tm_hour,
         .minute = time_info.tm_min,
         .second = time_info.tm_sec,
+        .day_of_week = time_info.tm_wday
     };
     Rtc_set_datetime(&dt);
 

@@ -257,11 +257,6 @@ static int load_config()
         return err;
     }
 
-    err = nvs_commit(nvs_handle);
-    if (err != ESP_OK) {
-        return err;
-    }
-
     nvs_close(nvs_handle);
     return ESP_OK;
 }

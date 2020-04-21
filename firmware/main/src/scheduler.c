@@ -37,12 +37,12 @@ SchedulerStatus s_scheduler_status;
 
 int Scheduler_init()
 {
-    int load_result = load_config();
-    if (load_result == ESP_ERR_NOT_FOUND) {
+    int error = load_config();
+    if (error == ESP_ERR_NVS_NOT_FOUND) {
         // 这种情况说明没有保存的配置，初次上电，我们恢复默认配置然后保存配置
         ESP_ERROR_CHECK(restore_default_config());
-    } else {
-        ESP_LOGE(TAG, "Failed to load Scheduler data from NVS.")
+    } else if (error != 0) {
+        ESP_LOGE(TAG, "Failed to load Scheduler data from NVS. Error code=%X", error);
         return -1;
     }
     return 0;
@@ -80,20 +80,18 @@ static void scheduler_task(void* params)
     TickType_t last_wake_time = xTaskGetTickCount();
     Schedule* sch = &s_scheduler_status.schedule;
     for (;;) {
-        if (sch->jobs_count > 0) {
-            RtcDateTime rtc_now = Rtc_now();
-            for (size_t i = 0; i < sch->jobs_count; i++) {
-                ScheduledJob* job = &sch->jobs[i];
-                // 检查周、时、分
-                if (Cron_can_execute(&job->when, &rtc_now)
-                    && RtcDateTime_compare(&rtc_now, &job->last_execute_time) > 0) {
-                    ESP_LOGI(TAG, "A scheduled job started...");
-                    // 设置执行时间，下次就不会再执行了
-                    memcpy(&job->last_execute_time, &rtc_now, sizeof(RtcDateTime));
-                    // 执行任务
-                    if (Pump_start_all(job->payloads) != 0) {
-                        ESP_LOGE(TAG, "Failed to start pump!");
-                    }
+        RtcDateTime rtc_now = Rtc_now();
+        ESP_LOGI(TAG, "job_count=%d", sch->jobs_count);
+        for (size_t i = 0; i < sch->jobs_count; i++) {
+            ScheduledJob* job = &sch->jobs[i];
+            // 检查周、时、分
+            if (Cron_can_execute(&job->when, &rtc_now) && RtcDateTime_compare(&rtc_now, &job->last_execute_time) > 0) {
+                ESP_LOGI(TAG, "A scheduled job started...");
+                // 设置执行时间，下次就不会再执行了
+                memcpy(&job->last_execute_time, &rtc_now, sizeof(RtcDateTime));
+                // 执行任务
+                if (Pump_start_all(job->payloads) != 0) {
+                    ESP_LOGE(TAG, "Failed to start pump!");
                 }
             }
         }
@@ -151,17 +149,14 @@ static int load_config()
     nvs_handle_t nvs_handle;
     esp_err_t err = nvs_open(NVS_NAMESPACE, NVS_READWRITE, &nvs_handle);
     if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to open NVS, error=%X", err);
         return err;
     }
 
     size_t size = sizeof(s_scheduler_status);
     err = nvs_get_blob(nvs_handle, NVS_SCHEDULER_CONFIG_KEY, &s_scheduler_status, &size);
     if (err != ESP_OK) {
-        return err;
-    }
-
-    err = nvs_commit(nvs_handle);
-    if (err != ESP_OK) {
+        ESP_LOGE(TAG, "Failed to get blob from NVS, error=%X", err);
         return err;
     }
 
@@ -171,6 +166,7 @@ static int load_config()
 
 static int restore_default_config()
 {
+    ESP_LOGI(TAG, "Restoring default config...");
     memset(&s_scheduler_status, 0, sizeof(s_scheduler_status));
     s_scheduler_status.is_running = 0;
     return save_config();
