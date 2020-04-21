@@ -81,7 +81,6 @@ static void scheduler_task(void* params)
     Schedule* sch = &s_scheduler_status.schedule;
     for (;;) {
         RtcDateTime rtc_now = Rtc_now();
-        ESP_LOGI(TAG, "job_count=%d", sch->jobs_count);
         for (size_t i = 0; i < sch->jobs_count; i++) {
             ScheduledJob* job = &sch->jobs[i];
             // 检查周、时、分
