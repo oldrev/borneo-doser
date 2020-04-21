@@ -1,9 +1,9 @@
 #pragma once
 
-#ifdef __cplusplus  
-extern "C" { 
-#endif 
-    /* Declarations of this file */
+#ifdef __cplusplus
+extern "C" {
+#endif
+/* Declarations of this file */
 
 /**
  * 初始化板载 LED
@@ -17,7 +17,6 @@ void OnboardLed_light_in_period(uint32_t ms);
 void OnboardLed_start_fast_blink();
 void OnboardLed_start_slow_blink();
 
-#ifdef __cplusplus 
-} 
-#endif 
-
+#ifdef __cplusplus
+}
+#endif

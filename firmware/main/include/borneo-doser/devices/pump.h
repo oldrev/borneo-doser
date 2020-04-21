@@ -1,39 +1,35 @@
 #pragma once
 
-#ifdef __cplusplus  
-extern "C" { 
-#endif 
-    /* Declarations of this file */
+#ifdef __cplusplus
+extern "C" {
+#endif
+/* Declarations of this file */
 
 #ifndef PUMP_MAX_CHANNELS
 #define PUMP_MAX_CHANNELS 4
 #endif
 
-enum 
-{
-    PUMP_ERROR_OK = 0,              // 成功
-    PUMP_ERROR_BUSY = 1,            // 设备忙
-    PUMP_ERROR_UNCALIBRATED = 2,    // 未校准（未设置速度）
-    PUMP_ERROR_INVALID_VOLUME = 3,  // 无效的体积
+enum {
+    PUMP_ERROR_OK = 0, // 成功
+    PUMP_ERROR_BUSY = 1, // 设备忙
+    PUMP_ERROR_UNCALIBRATED = 2, // 未校准（未设置速度）
+    PUMP_ERROR_INVALID_VOLUME = 3, // 无效的体积
 };
 
 enum {
-    PUMP_STATE_IDLE = 0,        // 空闲
-    PUMP_STATE_WAIT = 1,        // 等待马上要开始工作
-    PUMP_STATE_BUSY = 2,        // 工作中
+    PUMP_STATE_IDLE = 0, // 空闲
+    PUMP_STATE_WAIT = 1, // 等待马上要开始工作
+    PUMP_STATE_BUSY = 2, // 工作中
 };
 
 typedef struct {
-    const char* name; 
-    uint8_t     io_pin;
+    const char* name;
+    uint8_t io_pin;
 } PumpPort;
 
-
-typedef struct
-{
+typedef struct {
     double speeds[PUMP_MAX_CHANNELS];
 } PumpDeviceConfig;
-
 
 int Pump_init();
 int Pump_start(int ch, double vol);
@@ -44,14 +40,6 @@ int Pump_off(int ch);
 int Pump_update_speed(int ch, double speed);
 int Pump_is_any_busy();
 
-
-
-
-
-
-
-
-#ifdef __cplusplus 
-} 
-#endif 
-
+#ifdef __cplusplus
+}
+#endif

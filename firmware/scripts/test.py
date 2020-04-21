@@ -14,7 +14,7 @@ def make_jsonrpc(method, params):
 
 
 async def invoke_async(method, params):
-    reader, writer = await asyncio.open_connection('192.168.1.9', 1022)
+    reader, writer = await asyncio.open_connection('192.168.1.20', 1022)
 
     writer.write(make_jsonrpc(method, params))
     await writer.drain()
@@ -31,7 +31,8 @@ async def invoke_async(method, params):
 async def test_all_methods():
     hello_info = await invoke_async('sys.hello', [])
     print(hello_info)
-    #await invoke_async('doser.pump_until', [0, 2000])
+    await invoke_async('doser.pump_until', [0, 3000])
+    return
     #await invoke_async('doser.pump', [0, 1.0])
 
 

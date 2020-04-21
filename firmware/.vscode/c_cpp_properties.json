@@ -3,7 +3,8 @@
         {
             "name": "esp32-win64",
             "includePath": [
-                "${workspaceFolder}/main/**",
+                "${workspaceFolder}/main/include/**",
+                "${workspaceFolder}/components/borneo/include/**",
                 "${env:IDF_PATH}/components/*/include"
             ],
             "defines": [

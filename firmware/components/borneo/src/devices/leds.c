@@ -11,11 +11,12 @@
 #include "borneo/devices/leds.h"
 
 #define ONBOARD_LED_PERIOD 50
-#define FAST_INTERVAL 250
+#define FAST_INTERVAL 333
 #define SLOW_INTERVAL 3000
 
 #define ONBOARD_LED_PIN 2 // GPIO2
-#define ONBOARD_LED_PINS_MASK (1ULL << ONBOARD_LED_PIN)
+#define STATUS_LED_PIN 4 // GPIO4
+#define ONBOARD_LED_PINS_MASK (1ULL << ONBOARD_LED_PIN) | (1ULL << STATUS_LED_PIN)
 
 enum {
     ONBOARD_LED_OFF = 0, //灭
@@ -33,6 +34,8 @@ typedef struct OnboardLedStatusTag {
 static OnboardLedStatus s_onboard_led_status;
 
 static void OnboardLed_light_in_period_internal(uint32_t ms);
+static void led_set();
+static void led_reset();
 
 int OnboardLed_init()
 {
@@ -53,18 +56,18 @@ int OnboardLed_init()
 void OnboardLed_on()
 {
     s_onboard_led_status.mode = ONBOARD_LED_INFINITE;
-    gpio_set_level(ONBOARD_LED_PIN, 1);
+    led_set();
 }
 
 void OnboardLed_off()
 {
     s_onboard_led_status.mode = ONBOARD_LED_OFF;
-    gpio_set_level(ONBOARD_LED_PIN, 0);
+    led_set();
 }
 
 static void OnboardLed_light_in_period_internal(uint32_t ms)
 {
-    gpio_set_level(ONBOARD_LED_PIN, 1);
+    led_set();
     const uint32_t CPU_TICKS_PER_MS = esp_clk_cpu_freq() / 1000;
     uint32_t now = (xthal_get_ccount() / CPU_TICKS_PER_MS);
     s_onboard_led_status.end_time = now + ms;
@@ -96,14 +99,26 @@ void OnboardLed_drive(uint32_t now)
         uint32_t interval = s_onboard_led_status.mode == ONBOARD_LED_FAST_BLINK ? FAST_INTERVAL : SLOW_INTERVAL;
         uint32_t mod = elapsed % (ONBOARD_LED_PERIOD + interval);
         if (mod <= ONBOARD_LED_PERIOD) {
-            gpio_set_level(ONBOARD_LED_PIN, 1);
+            led_set();
         } else {
-            gpio_set_level(ONBOARD_LED_PIN, 0);
+            led_reset();
         }
     } else if (s_onboard_led_status.mode == ONBOARD_LED_LIGHT_IN_PERIOD) {
         if (now >= s_onboard_led_status.end_time) {
-            gpio_set_level(ONBOARD_LED_PIN, 0);
+            led_reset();
             s_onboard_led_status.mode = ONBOARD_LED_OFF;
         }
     }
+}
+
+static void led_set()
+{
+    gpio_set_level(ONBOARD_LED_PIN, 1);
+    gpio_set_level(STATUS_LED_PIN, 1);
+}
+
+static void led_reset()
+{
+    gpio_set_level(ONBOARD_LED_PIN, 0);
+    gpio_set_level(STATUS_LED_PIN, 0);
 }
