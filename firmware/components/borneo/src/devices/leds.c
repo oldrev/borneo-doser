@@ -11,7 +11,7 @@
 #include "borneo/devices/leds.h"
 
 #define ONBOARD_LED_PERIOD 50
-#define FAST_INTERVAL 333
+#define FAST_INTERVAL 250
 #define SLOW_INTERVAL 3000
 
 #define ONBOARD_LED_PIN 2 // GPIO2
@@ -23,17 +23,16 @@ enum {
     ONBOARD_LED_INFINITE = 1, // 常亮
     ONBOARD_LED_FAST_BLINK = 2, // 快闪
     ONBOARD_LED_SLOW_BLINK = 3, // 慢闪
-    ONBOARD_LED_LIGHT_IN_PERIOD = 4, // 亮一会儿
 };
 
 typedef struct OnboardLedStatusTag {
     volatile uint8_t mode;
-    volatile uint32_t end_time;
+    volatile int32_t last_time;
+    volatile uint8_t is_on;
 } OnboardLedStatus;
 
 static OnboardLedStatus s_onboard_led_status;
 
-static void OnboardLed_light_in_period_internal(uint32_t ms);
 static void led_set();
 static void led_reset();
 
@@ -65,60 +64,49 @@ void OnboardLed_off()
     led_set();
 }
 
-static void OnboardLed_light_in_period_internal(uint32_t ms)
-{
-    led_set();
-    const uint32_t CPU_TICKS_PER_MS = esp_clk_cpu_freq() / 1000;
-    uint32_t now = (xthal_get_ccount() / CPU_TICKS_PER_MS);
-    s_onboard_led_status.end_time = now + ms;
-}
-
-void OnboardLed_light_in_period(uint32_t ms)
-{
-    OnboardLed_light_in_period_internal(ms);
-    s_onboard_led_status.mode = ONBOARD_LED_LIGHT_IN_PERIOD;
-}
-
 void OnboardLed_start_fast_blink()
 {
-    OnboardLed_light_in_period_internal(0);
     s_onboard_led_status.mode = ONBOARD_LED_FAST_BLINK;
+    s_onboard_led_status.last_time = 0;
 }
 
 void OnboardLed_start_slow_blink()
 {
-    OnboardLed_light_in_period_internal(0);
     s_onboard_led_status.mode = ONBOARD_LED_SLOW_BLINK;
+    s_onboard_led_status.last_time = 0;
 }
 
 void OnboardLed_drive(uint32_t now)
 {
     // 忽略常亮常灭
     if (s_onboard_led_status.mode == ONBOARD_LED_FAST_BLINK || s_onboard_led_status.mode == ONBOARD_LED_SLOW_BLINK) {
-        uint32_t elapsed = now - s_onboard_led_status.end_time;
-        uint32_t interval = s_onboard_led_status.mode == ONBOARD_LED_FAST_BLINK ? FAST_INTERVAL : SLOW_INTERVAL;
-        uint32_t mod = elapsed % (ONBOARD_LED_PERIOD + interval);
-        if (mod <= ONBOARD_LED_PERIOD) {
-            led_set();
-        } else {
-            led_reset();
-        }
-    } else if (s_onboard_led_status.mode == ONBOARD_LED_LIGHT_IN_PERIOD) {
-        if (now >= s_onboard_led_status.end_time) {
-            led_reset();
-            s_onboard_led_status.mode = ONBOARD_LED_OFF;
+        int off_interval = s_onboard_led_status.mode == ONBOARD_LED_FAST_BLINK ? FAST_INTERVAL : SLOW_INTERVAL;
+        int interval = s_onboard_led_status.is_on ? off_interval : ONBOARD_LED_PERIOD;
+        if ((now - s_onboard_led_status.last_time) > interval) {
+            if (s_onboard_led_status.is_on) {
+                led_reset();
+            } else {
+                led_set();
+            }
+            s_onboard_led_status.last_time = now;
         }
     }
 }
 
 static void led_set()
 {
-    gpio_set_level(ONBOARD_LED_PIN, 1);
-    gpio_set_level(STATUS_LED_PIN, 1);
+    if (!s_onboard_led_status.is_on) {
+        gpio_set_level(ONBOARD_LED_PIN, 1);
+        gpio_set_level(STATUS_LED_PIN, 1);
+        s_onboard_led_status.is_on = 1;
+    }
 }
 
 static void led_reset()
 {
-    gpio_set_level(ONBOARD_LED_PIN, 0);
-    gpio_set_level(STATUS_LED_PIN, 0);
+    if (s_onboard_led_status.is_on) {
+        gpio_set_level(ONBOARD_LED_PIN, 0);
+        gpio_set_level(STATUS_LED_PIN, 0);
+        s_onboard_led_status.is_on = 0;
+    }
 }
