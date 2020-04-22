@@ -10,9 +10,10 @@ extern "C" {
 
 typedef struct {
     char name[SCHEDULER_MAX_JOB_NAME];
+    int8_t can_parallel;
     Cron when;
     double payloads[PUMP_MAX_CHANNELS];
-    RtcDateTime last_execute_time;
+    time_t last_execute_time;
 } ScheduledJob;
 
 typedef struct {

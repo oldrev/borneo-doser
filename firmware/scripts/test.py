@@ -31,8 +31,8 @@ async def invoke_async(method, params):
 
 
 async def test_all_methods():
-    hello_info = await invoke_async('sys.hello', [])
-    print(hello_info)
+    #hello_info = await invoke_async('sys.hello', [])
+    #print(hello_info)
     #await invoke_async('doser.pump_until', [0, 3000])
     #return
     #await invoke_async('doser.pump', [0, 1.0])
@@ -44,7 +44,8 @@ async def test_all_methods():
     # 测试设置排程
     job1 = {
         'name': '添加Mg',
-        "when": { "dow": [1, 2, 3, 4, 5, 6, 7], "hours": list(range(0, 24)), "minute": 45 },
+        'canParallel': True,
+        "when": { "dow": [0, 1, 2, 3, 4, 5, 6], "hours": list(range(0, 24)), "minute": 39 },
         "payloads": [0.8, 0.2, 0, 0]
     }
     print('-------------------------------')

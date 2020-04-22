@@ -5,16 +5,6 @@ extern "C" {
 #endif
 /* Declarations of this file */
 
-typedef struct RtcDateTimeTag {
-    uint16_t year;
-    uint8_t month;
-    uint8_t day;
-    uint8_t hour;
-    uint8_t minute;
-    uint8_t second;
-    uint8_t day_of_week;
-} RtcDateTime;
-
 enum {
     RTC_JAN = 1,
     RTC_FEB = 2,
@@ -34,9 +24,9 @@ enum { RTC_MON = 1, RTC_TUE = 2, RTC_WED = 3, RTC_THU = 4, RTC_FRI = 5, RTC_SAT 
 
 int Rtc_init();
 int Rtc_start();
-RtcDateTime Rtc_now();
+struct tm Rtc_local_now();
 int64_t Rtc_timestamp();
-void Rtc_set_datetime(const RtcDateTime* dt);
+void Rtc_set_datetime(const struct tm* dt);
 
 #ifdef __cplusplus
 }

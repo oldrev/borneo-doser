@@ -19,6 +19,7 @@
 static const char* TAG = "SNTP";
 
 #define MAX_RETRY_COUNT 5
+static const char* SNTP_TZ = "CST-8";
 
 static void on_time_sync(struct timeval* tv);
 static struct tm local_now();
@@ -34,9 +35,10 @@ int Sntp_init()
 
 int Sntp_is_sync_needed()
 {
-    struct tm timeinfo = local_now();
+    struct tm now = local_now();
     // Is time set? If not, tm_year will be (1970 - 1900).
-    return timeinfo.tm_year < (2016 - 1900);
+    int year = 1900 + now.tm_year;
+    return year < (2016 - 1900);
 }
 
 int Sntp_try_sync_time()
@@ -67,17 +69,8 @@ static void on_time_sync(struct timeval* tv)
     // Setup rtc
     ESP_LOGI(TAG, "Updating RTC time by SNTP result");
 
-    struct tm time_info = local_now();
-    RtcDateTime dt = {
-        .year = time_info.tm_year % 100,
-        .month = time_info.tm_mon + 1,
-        .day = time_info.tm_mday,
-        .hour = time_info.tm_hour,
-        .minute = time_info.tm_min,
-        .second = time_info.tm_sec,
-        .day_of_week = time_info.tm_wday
-    };
-    Rtc_set_datetime(&dt);
+    struct tm now = local_now();
+    Rtc_set_datetime(&now);
 
     ESP_LOGI(TAG, "External RTC time was updated.");
 }
@@ -89,7 +82,7 @@ static struct tm local_now()
     struct tm timeinfo = { 0 };
     localtime_r(&now, &timeinfo);
 
-    setenv("TZ", "CST-8", 1);
+    setenv("TZ", SNTP_TZ, 1);
     tzset();
     localtime_r(&now, &timeinfo);
     return timeinfo;

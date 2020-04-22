@@ -1,4 +1,5 @@
 #include <stdint.h>
+#include <time.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -28,8 +29,6 @@
 #define DS1302_REG_YEAR 0x8C
 #define DS1302_REG_WP 0x8E
 #define DS1302_REG_BURST 0xBE
-
-static const char* TAG = "DS1302";
 
 static void begin_read(uint8_t address);
 static void begin_write(uint8_t address);
@@ -75,33 +74,34 @@ int DS1302_is_halted()
     return (seconds & 0b10000000);
 }
 
-void DS1302_now(RtcDateTime* now)
+void DS1302_now(struct tm* now)
 {
     begin_read(DS1302_REG_BURST);
-    now->second = (uint8_t)bcd2dec(read_byte() & 0b01111111);
-    now->minute = (uint8_t)bcd2dec(read_byte() & 0b01111111);
-    now->hour = (uint8_t)bcd2dec(read_byte() & 0b00111111);
-    now->day = (uint8_t)bcd2dec(read_byte() & 0b00111111);
-    now->month = (uint8_t)bcd2dec(read_byte() & 0b00011111);
-    now->day_of_week = (uint8_t)bcd2dec(read_byte() & 0b00000111);
-    now->year = 2000 + (uint8_t)bcd2dec(read_byte() & 0b01111111);
+    now->tm_sec = (uint8_t)bcd2dec(read_byte() & 0b01111111);
+    now->tm_min = (uint8_t)bcd2dec(read_byte() & 0b01111111);
+    now->tm_hour = (uint8_t)bcd2dec(read_byte() & 0b00111111);
+    now->tm_mday = (uint8_t)bcd2dec(read_byte() & 0b00111111);
+    now->tm_mon = (uint8_t)bcd2dec(read_byte() & 0b00011111) - 1;
+    now->tm_wday = (uint8_t)bcd2dec(read_byte() & 0b00000111) % 7;
+    now->tm_year = 100 + (uint8_t)bcd2dec(read_byte() & 0b01111111);
+    now->tm_isdst = -1;
     end_io();
 }
 
-void DS1302_set_datetime(const RtcDateTime* dt)
+void DS1302_set_datetime(const struct tm* dt)
 {
     begin_write(DS1302_REG_WP);
     write_byte(0b00000000);
     end_io();
 
     begin_write(DS1302_REG_BURST);
-    write_byte(dec2bcd(dt->second % 60));
-    write_byte(dec2bcd(dt->minute % 60));
-    write_byte(dec2bcd(dt->hour % 24));
-    write_byte(dec2bcd(dt->day % 32));
-    write_byte(dec2bcd(dt->month % 13));
-    write_byte(dec2bcd(dt->day_of_week % 8));
-    write_byte(dec2bcd(dt->year % 100));
+    write_byte(dec2bcd(dt->tm_sec % 60));
+    write_byte(dec2bcd(dt->tm_min % 60));
+    write_byte(dec2bcd(dt->tm_hour % 24));
+    write_byte(dec2bcd(dt->tm_mday % 32));
+    write_byte(dec2bcd((dt->tm_mon + 1) % 13));
+    write_byte(dec2bcd(dt->tm_wday == 0 ? 7 : dt->tm_wday));
+    write_byte(dec2bcd(dt->tm_year % 100));
     write_byte(0b10000000);
     end_io();
 }

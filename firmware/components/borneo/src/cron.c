@@ -1,9 +1,18 @@
+#include <time.h>
 #include <cJSON.h>
 #include <stdint.h>
 
 #include "borneo/cron.h"
 #include "borneo/rtc.h"
 #include "borneo/utils/bit-utils.h"
+
+int Cron_can_execute(const Cron* cron, const struct tm* rtc)
+{
+    int dow_matched = get_bit_u8(cron->dow, rtc->tm_wday);
+    int hour_matched = get_bit_u32(cron->hours, rtc->tm_hour);
+    int minute_matched = cron->minute == rtc->tm_min;
+    return minute_matched && hour_matched && dow_matched;
+}
 
 cJSON* Cron_to_json(const Cron* cron)
 {
@@ -21,7 +30,7 @@ cJSON* Cron_to_json(const Cron* cron)
     cJSON_AddItemToObject(cron_json, "hours", hours_json);
 
     cJSON* dow_json = cJSON_CreateArray();
-    for (int dow = 1; dow <= 7; dow++) {
+    for (int dow = 0; dow < 7; dow++) {
         if (get_bit_u8(cron->dow, dow)) {
             cJSON_AddItemToArray(dow_json, cJSON_CreateNumber(dow));
         }
@@ -66,13 +75,13 @@ int Cron_from_json(Cron* cron, const cJSON* cron_json)
         return -1;
     }
     size_t dow_array_size = cJSON_GetArraySize(dow_json);
-    if (dow_array_size < 1 || dow_array_size > 7) {
+    if (dow_array_size <= 0 || dow_array_size > 7) {
         return -1;
     }
     cJSON* day_json;
     cJSON_ArrayForEach(day_json, dow_json)
     {
-        if (!cJSON_IsNumber(day_json) || day_json->valueint < 1 || day_json->valueint > 7) {
+        if (!cJSON_IsNumber(day_json) || day_json->valueint < 0 || day_json->valueint > 6) {
             return -1;
         }
         // 设置位
@@ -80,12 +89,4 @@ int Cron_from_json(Cron* cron, const cJSON* cron_json)
     }
 
     return 0;
-}
-
-int Cron_can_execute(const Cron* cron, const RtcDateTime* rtc)
-{
-    int dow_matched = get_bit_u8(cron->dow, rtc->day_of_week);
-    int hour_matched = get_bit_u32(cron->hours, rtc->hour);
-    int minute_matched = cron->minute == rtc->minute;
-    return minute_matched && hour_matched && dow_matched;
 }

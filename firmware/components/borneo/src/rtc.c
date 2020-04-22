@@ -1,4 +1,6 @@
 #include <stdint.h>
+#include <time.h>
+#include <memory.h>
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/FreeRTOSConfig.h>
@@ -15,9 +17,13 @@
 
 static void rtc_task();
 
-static RtcDateTime s_now;
+static struct tm s_now;
 
-int Rtc_init() { return DS1302_init(); }
+int Rtc_init()
+{
+    memset(&s_now, 0, sizeof(s_now));
+    return DS1302_init();
+}
 
 int Rtc_start()
 {
@@ -25,14 +31,11 @@ int Rtc_start()
     return 0;
 }
 
-RtcDateTime Rtc_now() { return s_now; }
+struct tm Rtc_local_now() { return s_now; }
 
-int64_t Rtc_timestamp()
-{
-    return to_unix_time(2000 + s_now.year, s_now.month, s_now.day, s_now.hour, s_now.minute, s_now.second);
-}
+int64_t Rtc_timestamp() { return mktime(&s_now); }
 
-void Rtc_set_datetime(const RtcDateTime* dt) { DS1302_set_datetime(dt); }
+void Rtc_set_datetime(const struct tm* dt) { DS1302_set_datetime(dt); }
 
 static void rtc_task()
 {

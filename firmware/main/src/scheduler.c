@@ -1,3 +1,4 @@
+#include <time.h>
 #include <cJSON.h>
 #include <memory.h>
 #include <stdint.h>
@@ -24,7 +25,6 @@
 #include "borneo/utils/time.h"
 
 static void scheduler_task(void* params);
-static int RtcDateTime_compare(const RtcDateTime* lhs, const RtcDateTime* rhs);
 static int load_config();
 static int restore_default_config();
 static int save_config();
@@ -38,8 +38,8 @@ SchedulerStatus s_scheduler_status;
 int Scheduler_init()
 {
     int error = load_config();
-    if (error == ESP_ERR_NVS_NOT_FOUND) {
-        // 这种情况说明没有保存的配置，初次上电，我们恢复默认配置然后保存配置
+    if (error == ESP_ERR_NVS_NOT_FOUND || error == ESP_ERR_NVS_INVALID_LENGTH) {
+        // 这种情况说明没有保存的配置，初次上电或者存储格式变了，我们恢复默认配置然后保存配置
         ESP_ERROR_CHECK(restore_default_config());
     } else if (error != 0) {
         ESP_LOGE(TAG, "Failed to load Scheduler data from NVS. Error code=%X", error);
@@ -60,11 +60,23 @@ int Scheduler_update_schedule(const Schedule* schedule)
 {
     Schedule* sch = &s_scheduler_status.schedule;
     for (size_t i = 0; i < schedule->jobs_count; i++) {
-        memcpy(&sch->jobs[i].when, &schedule->jobs[i].when, sizeof(Cron));
-        memcpy(&sch->jobs[i].payloads, &schedule->jobs[i].payloads, sizeof(double) * PUMP_MAX_CHANNELS);
-        if (strlen(schedule->jobs[i].name) > 0) {
-            strcpy(sch->jobs[i].name, schedule->jobs[i].name);
+        const ScheduledJob* src_job = &schedule->jobs[i];
+        ScheduledJob* dest_job = &sch->jobs[i];
+
+        // 更新 name
+        if (src_job->name != NULL && strlen(src_job->name) > 0) {
+            strcpy(dest_job->name, src_job->name);
         }
+
+        // 更新 canParallel
+        dest_job->can_parallel = src_job->can_parallel;
+
+        // 更新 when
+        memcpy(&dest_job->when, &src_job->when, sizeof(Cron));
+
+        // 更新 payloads
+        memcpy(&dest_job->payloads, &src_job->payloads, sizeof(double) * PUMP_MAX_CHANNELS);
+
         // last_execute_time 不动，保持原来的
     }
     s_scheduler_status.schedule.jobs_count = schedule->jobs_count;
@@ -80,17 +92,22 @@ static void scheduler_task(void* params)
     TickType_t last_wake_time = xTaskGetTickCount();
     Schedule* sch = &s_scheduler_status.schedule;
     for (;;) {
-        RtcDateTime rtc_now = Rtc_now();
+        struct tm rtc_now = Rtc_local_now();
+        time_t rtc_time = mktime(&rtc_now);
         for (size_t i = 0; i < sch->jobs_count; i++) {
             ScheduledJob* job = &sch->jobs[i];
             // 检查周、时、分
-            if (Cron_can_execute(&job->when, &rtc_now) && RtcDateTime_compare(&rtc_now, &job->last_execute_time) > 0) {
-                ESP_LOGI(TAG, "A scheduled job started...");
-                // 设置执行时间，下次就不会再执行了
-                memcpy(&job->last_execute_time, &rtc_now, sizeof(RtcDateTime));
-                // 执行任务
-                if (Pump_start_all(job->payloads) != 0) {
-                    ESP_LOGE(TAG, "Failed to start pump!");
+            if (Cron_can_execute(&job->when, &rtc_now)) {
+                // TODO 这里计算执行时间，不要固定 60
+                double since_last = difftime(rtc_time, job->last_execute_time);
+                if (since_last > 60.0) {
+                    ESP_LOGI(TAG, "A scheduled job started...");
+                    // 设置执行时间，下次就不会再执行了
+                    job->last_execute_time = rtc_time;
+                    // 执行任务
+                    if (Pump_start_all(job->payloads) != 0) {
+                        ESP_LOGE(TAG, "Failed to start pump!");
+                    }
                 }
             }
         }
@@ -98,22 +115,6 @@ static void scheduler_task(void* params)
         vTaskDelayUntil(&last_wake_time, freq);
     }
     vTaskDelete(NULL);
-}
-
-static int RtcDateTime_compare(const RtcDateTime* lhs, const RtcDateTime* rhs)
-{
-    uint64_t l
-        = (lhs->year * 100000000) + (lhs->month * 1000000) + (lhs->day * 10000) + (lhs->hour * 100) + lhs->minute;
-    uint64_t r
-        = (rhs->year * 100000000) + (rhs->month * 1000000) + (rhs->day * 10000) + (rhs->hour * 100) + rhs->minute;
-
-    if (l > r) {
-        return 1;
-    } else if (l < r) {
-        return -1;
-    } else {
-        return 0;
-    }
 }
 
 static int save_config()

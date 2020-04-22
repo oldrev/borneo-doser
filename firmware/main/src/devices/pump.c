@@ -152,6 +152,12 @@ int Pump_update_speed(int ch, double speed)
     return save_config();
 }
 
+double Pump_get_speed(int ch)
+{
+    assert(ch > 0 && ch < PUMP_MAX_CHANNELS);
+    return s_pump_status.config.speeds[ch];
+}
+
 int Pump_is_any_busy()
 {
     for (size_t i = 0; i < sizeof(PUMP_PORT_TABLE) / sizeof(PumpPort); i++) {

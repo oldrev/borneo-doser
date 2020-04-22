@@ -1,10 +1,12 @@
 #include <malloc.h>
+#include <time.h>
 #include <math.h>
 #include <memory.h>
 #include <stdint.h>
 #include <string.h>
 
 #include <cJSON.h>
+#include <esp_log.h>
 
 #include "borneo/device-config.h"
 #include "borneo/rpc.h"
@@ -16,6 +18,8 @@
 #include "borneo-doser/rpc/doser.h"
 #include "borneo-doser/devices/pump.h"
 #include "borneo-doser/scheduler.h"
+
+#define TAG "SCHEDULER-RPC"
 
 RpcMethodResult RpcMethod_doser_schedule_get(const cJSON* params)
 {
@@ -30,6 +34,8 @@ RpcMethodResult RpcMethod_doser_schedule_get(const cJSON* params)
 
         cJSON_AddItemToObject(job_json, "name", cJSON_CreateString(job->name));
 
+        cJSON_AddItemToObject(job_json, "canParallel", job->can_parallel ? cJSON_CreateTrue() : cJSON_CreateFalse());
+
         cJSON_AddItemToObject(job_json, "when", Cron_to_json(&job->when));
 
         // 填充 payloads 数组
@@ -40,10 +46,7 @@ RpcMethodResult RpcMethod_doser_schedule_get(const cJSON* params)
         }
         cJSON_AddItemToObject(job_json, "payloads", payloads_json);
 
-        uint32_t last_execute_time
-            = to_unix_time(job->last_execute_time.year, job->last_execute_time.month, job->last_execute_time.day,
-                job->last_execute_time.hour, job->last_execute_time.minute, job->last_execute_time.second);
-        cJSON_AddItemToObject(job_json, "lastExecuteTime", cJSON_CreateNumber(last_execute_time));
+        cJSON_AddItemToObject(job_json, "lastExecuteTime", cJSON_CreateNumber(job->last_execute_time));
 
         cJSON_AddItemToArray(jobs_json, job_json);
     }
@@ -95,10 +98,31 @@ RpcMethodResult RpcMethod_doser_schedule_set(const cJSON* params)
             if (name_json == NULL || !cJSON_IsString(name_json)
                 || strnlen(name_json->valuestring, SCHEDULER_MAX_JOB_NAME - 1) > (SCHEDULER_MAX_JOB_NAME - 1)) {
                 result.error.code = RPC_ERROR_INVALID_PARAMS;
-                result.error.message = "Invalid name";
+                result.error.message = "Invalid 'name'";
                 goto __FAILED_EXIT;
+            } else {
+                strncpy(job->name, name_json->valuestring, SCHEDULER_MAX_JOB_NAME - 1);
             }
-            strncpy(job->name, name_json->valuestring, SCHEDULER_MAX_JOB_NAME - 1);
+        } else {
+            result.error.code = RPC_ERROR_INVALID_PARAMS;
+            result.error.message = "'name' is required.";
+            goto __FAILED_EXIT;
+        }
+
+        // 设置 can_parallel 元素
+        if (cJSON_HasObjectItem(job_json, "canParallel")) {
+            cJSON* can_parallel_json = cJSON_GetObjectItemCaseSensitive(job_json, "canParallel");
+            if (can_parallel_json == NULL || !cJSON_IsBool(can_parallel_json)) {
+                result.error.code = RPC_ERROR_INVALID_PARAMS;
+                result.error.message = "Invalid 'canParallel'";
+                goto __FAILED_EXIT;
+            } else {
+                job->can_parallel = can_parallel_json->valueint;
+            }
+        } else {
+            result.error.code = RPC_ERROR_INVALID_PARAMS;
+            result.error.message = "'canParallel' is required.";
+            goto __FAILED_EXIT;
         }
 
         // 设置 when 元素
