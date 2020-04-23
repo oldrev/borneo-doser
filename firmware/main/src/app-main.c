@@ -20,16 +20,18 @@
 #include <freertos/task.h>
 #include <nvs_flash.h>
 #include <tcpip_adapter.h>
+#include <driver/gpio.h>
 
 #include "borneo/broadcast.h"
 #include "borneo/cron.h"
-#include "borneo/devices/buttons.h"
 #include "borneo/devices/leds.h"
+#include "borneo/devices/buttons.h"
 #include "borneo-doser/devices/pump.h"
 #include "borneo/devices/wifi.h"
 #include "borneo/rpc.h"
 #include "borneo/rtc.h"
 #include "borneo-doser/scheduler.h"
+#include "borneo/devices/buttons.h"
 #include "borneo/serial.h"
 #include "borneo/sntp.h"
 
@@ -67,12 +69,22 @@ static void connect_handler(void* arg, esp_event_base_t event_base, int32_t even
     OnboardLed_start_slow_blink();
 }
 
+
+static void mode_button_pushed(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
+    OnboardLed_start_fast_blink();
+}
+
 static int App_init_devices()
 {
+
     ESP_ERROR_CHECK(OnboardLed_init());
 
     // 设备初始化自检开始，让板载 LED 常亮
     OnboardLed_on();
+
+    // 初始化模式按钮
+    ESP_ERROR_CHECK(SimplePushButton_init(27)); //IO27
+    ESP_ERROR_CHECK(esp_event_handler_register(BORNEO_BUTTON_EVENTS, BORNEO_EVENT_BUTTON_PUSHED, &mode_button_pushed, NULL));
 
     ESP_ERROR_CHECK(Serial_init());
 
@@ -94,7 +106,7 @@ static int App_init_devices()
  */
 static void App_idle_task()
 {
-    const TickType_t freq = 25 / portTICK_PERIOD_MS;
+    const TickType_t freq = 50 / portTICK_PERIOD_MS;
     TickType_t last_wake_time = xTaskGetTickCount();
     for (;;) {
         // 驱动板载 LED
@@ -109,10 +121,11 @@ static void App_idle_task()
 void app_main()
 {
     ESP_ERROR_CHECK(nvs_flash_init());
+    ESP_ERROR_CHECK(esp_event_loop_create_default());
+
+    gpio_install_isr_service(0);
 
     ESP_ERROR_CHECK(App_init_devices());
-
-    ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     // 启动辅助进程
     xTaskCreate(App_idle_task, "idle_task", 4096, NULL, tskIDLE_PRIORITY, NULL);

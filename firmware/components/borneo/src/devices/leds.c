@@ -10,9 +10,9 @@
 
 #include "borneo/devices/leds.h"
 
-#define ONBOARD_LED_PERIOD 50
-#define FAST_INTERVAL 250
-#define SLOW_INTERVAL 3000
+#define ONBOARD_LED_PERIOD 100
+#define FAST_INTERVAL 200
+#define SLOW_INTERVAL 2000
 
 #define ONBOARD_LED_PIN 2 // GPIO2
 #define STATUS_LED_PIN 4 // GPIO4
