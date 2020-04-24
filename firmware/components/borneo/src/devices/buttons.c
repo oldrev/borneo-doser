@@ -8,13 +8,13 @@
 
 #include "borneo/devices/buttons.h"
 
-
 static void isr_handler(void* param);
 
 ESP_EVENT_DEFINE_BASE(BORNEO_BUTTON_EVENTS);
 
 int SimplePushButton_init(int io_pin)
 {
+    int error = 0;
     gpio_config_t io_conf;
 
     const uint64_t pin_masks = 1ULL << io_pin;
@@ -24,7 +24,15 @@ int SimplePushButton_init(int io_pin)
     io_conf.mode = GPIO_MODE_INPUT;
     io_conf.pull_down_en = 1;
     io_conf.pull_up_en = 0;
-    gpio_config(&io_conf);
+    error = gpio_config(&io_conf);
+    if (error != 0) {
+        return error;
+    }
+
+    error = gpio_set_intr_type(io_pin, GPIO_INTR_ANYEDGE);
+    if (error != 0) {
+        return error;
+    }
 
     return gpio_isr_handler_add(io_pin, &isr_handler, (void*)io_pin);
 }
@@ -32,5 +40,5 @@ int SimplePushButton_init(int io_pin)
 static void isr_handler(void* param)
 {
     int io_pin = (int)param;
-    ESP_ERROR_CHECK(esp_event_isr_post(BORNEO_BUTTON_EVENTS, BORNEO_EVENT_BUTTON_PUSHED, (void*)io_pin, sizeof(int), NULL));
+    ESP_ERROR_CHECK(esp_event_isr_post(BORNEO_BUTTON_EVENTS, BORNEO_EVENT_BUTTON_PUSHED, &io_pin, sizeof(int), NULL));
 }

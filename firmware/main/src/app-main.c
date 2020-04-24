@@ -51,6 +51,8 @@ const RpcMethodEntry RPC_METHOD_TABLE[] = {
     { .name = "doser.schedule_set", .callback = &RpcMethod_doser_schedule_set },
 };
 
+static const char* TAG = "APP_MAIN";
+
 static void disconnect_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {}
 
 static void connect_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
@@ -71,6 +73,8 @@ static void connect_handler(void* arg, esp_event_base_t event_base, int32_t even
 
 
 static void mode_button_pushed(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
+    int button_io_pin = *((int*)event_data);
+    ESP_LOGI(TAG, "Button %d pressed", button_io_pin);
     OnboardLed_start_fast_blink();
 }
 
