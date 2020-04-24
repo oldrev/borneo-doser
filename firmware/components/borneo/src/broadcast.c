@@ -26,7 +26,7 @@ static const char* TAG = "UDP";
 
 #define HOST_IP_ADDR "255.255.255.255"
 
-const char* MSG_FORMAT = "{\"MagicWord\":9966,\"Message\":{\"Ts\":%lld,\"TcpPort\":%d,\"Serial\":\"%"
+const char* MSG_FORMAT = "{\"MagicWord\":9966,\"Message\":{\"Ts\":%d,\"TcpPort\":%d,\"Serial\":\"%"
                          "s\",\"DevName\":\"%s\"}}";
 
 #define MAX_PACKET_SIZE 1024
@@ -41,7 +41,9 @@ static void udp_client_task(void* params)
 
     p = pbuf_alloc(PBUF_TRANSPORT, MAX_PACKET_SIZE, PBUF_RAM);
 
-    while (1) {
+    const TickType_t freq = 5000 / portTICK_PERIOD_MS;
+    TickType_t last_wake_time = xTaskGetTickCount();
+    for (;;) {
         memset(s_packet_buf, 0, MAX_PACKET_SIZE);
         snprintf((char*)s_packet_buf, MAX_PACKET_SIZE - 1, MSG_FORMAT, Rtc_timestamp(), BORNEO_DEVICE_TCP_PORT,
             Serial_get(), BORNEO_DEVICE_NAME);
@@ -51,14 +53,24 @@ static void udp_client_task(void* params)
 
         // Allocate packet buffer
         udp_sendto(udp, p, IP_ADDR_BROADCAST, BORNEO_DEVICE_UDP_PORT);
-        vTaskDelay(5000 / portTICK_PERIOD_MS); // some delay!
+
+        vTaskDelayUntil(&last_wake_time, freq);
     }
+
+    vTaskDelete(NULL);
+
+
+    
     pbuf_free(p); // De-allocate packet buffer
     udp_remove(udp);
     vTaskDelete(NULL);
 }
 
-int Broadcast_init() { return 0; }
+int Broadcast_init()
+{
+    ESP_LOGI(TAG, "Initailzing UDP broadcasting....");
+    return 0;
+}
 
 int Broadcast_start()
 {
@@ -66,9 +78,9 @@ int Broadcast_start()
      * menuconfig. Read "Establishing Wi-Fi or Ethernet Connection" section in
      * examples/protocols/README.md for more information about this function.
      */
-    // ESP_ERROR_CHECK(example_connect());
+    ESP_LOGI(TAG, "Starting UDP broadcasting....");
 
-    xTaskCreate(udp_client_task, "udp_client", 4096, NULL, 5, NULL);
+    xTaskCreate(udp_client_task, "udp_client", 4096, NULL, tskIDLE_PRIORITY, NULL);
     ESP_LOGI(TAG, "UDP broadcasting started.");
     return 0;
 }

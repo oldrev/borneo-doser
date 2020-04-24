@@ -25,7 +25,7 @@
 #define PUMP_TIMER_INDEX 0
 
 typedef struct {
-    volatile int state; // 状态
+    volatile PumpState state; // 状态
     volatile int duration; // 任务持续时间，单位毫秒
     esp_timer_handle_t timer; // 任务定时器
     esp_timer_create_args_t timer_args; // 任务定时器参数
@@ -166,6 +166,16 @@ int Pump_is_any_busy()
         }
     }
     return 0;
+}
+
+PumpChannelInfo Pump_get_channel_info(int ch)
+{
+    PumpChannelInfo info = {
+        .name = PUMP_PORT_TABLE[ch].name,
+        .state = s_pump_status.channels[ch].state,
+        .speed = s_pump_status.config.speeds[ch],
+    };
+    return info;
 }
 
 static int prepare_for_volume(int ch, double vol)

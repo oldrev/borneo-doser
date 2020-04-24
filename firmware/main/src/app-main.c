@@ -51,6 +51,7 @@ const RpcMethodEntry RPC_METHOD_TABLE[] = {
     { .name = "doser.speed_set", .callback = &RpcMethod_doser_speed_set },
     { .name = "doser.schedule_get", .callback = &RpcMethod_doser_schedule_get },
     { .name = "doser.schedule_set", .callback = &RpcMethod_doser_schedule_set },
+    { .name = "doser.status", .callback = &RpcMethod_doser_status },
 };
 
 const SimpleButton SIMPLE_BUTTONS[] = { { .id = 0, .io_pin = 27 } };
@@ -60,8 +61,10 @@ static void disconnect_handler(void* arg, esp_event_base_t event_base, int32_t e
 static void connect_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
     ESP_LOGI("APP", "Connected to station.");
+    /*
     ESP_ERROR_CHECK(Broadcast_init());
     ESP_ERROR_CHECK(Broadcast_start());
+    */
 
     ESP_ERROR_CHECK(Rpc_init(RPC_METHOD_TABLE, sizeof(RPC_METHOD_TABLE) / sizeof(RpcMethodEntry)));
     ESP_ERROR_CHECK(Rpc_start());

@@ -43,6 +43,7 @@ const RpcRequestHandler REQUEST_HANDLER = {
 
 int Rpc_init(const RpcMethodEntry* rpc_method_table, size_t n)
 {
+    ESP_LOGI(TAG, "Initializing RPC server....");
     s_rpc_methods = rpc_method_table;
     s_rpc_method_count = n;
 

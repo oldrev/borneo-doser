@@ -29,13 +29,20 @@ async def invoke_async(method, params):
     await writer.wait_closed()
     return response['result']
 
+async def doser_set_speed(ch, speed):
+    await invoke_async('doser.speed_set', [ch, speed])
 
 async def test_all_methods():
     #hello_info = await invoke_async('sys.hello', [])
     #print(hello_info)
-    #await invoke_async('doser.pump_until', [0, 3000])
-    #return
-    #await invoke_async('doser.pump', [0, 1.0])
+    status = await invoke_async('doser.status', [])
+    print(status)
+    return
+    await invoke_async('doser.pump_until', [0, 3000])
+    await invoke_async('doser.pump_until', [1, 6000])
+    await invoke_async('doser.pump_until', [2, 9000])
+    await invoke_async('doser.pump_until', [3, 12000])
+    #await invoke_async('doser.pump', [0, 5.0])
 
 
     # 测试获取排程
@@ -45,8 +52,8 @@ async def test_all_methods():
     job1 = {
         'name': '添加Mg',
         'canParallel': True,
-        "when": { "dow": [0, 1, 2, 3, 4, 5, 6], "hours": list(range(0, 24)), "minute": 39 },
-        "payloads": [0.8, 0.2, 0, 0]
+        "when": { "dow": [1,2,3,4,5,6,0], "hours": list(range(0, 24)), "minute": 25 },
+        "payloads": [0.8, 1, 1, 1]
     }
     print('-------------------------------')
     print (job1)

@@ -33,7 +33,7 @@ int Rtc_start()
 
 struct tm Rtc_local_now() { return s_now; }
 
-int64_t Rtc_timestamp() { return mktime(&s_now); }
+time_t Rtc_timestamp() { return mktime(&s_now); }
 
 void Rtc_set_datetime(const struct tm* dt) { DS1302_set_datetime(dt); }
 
