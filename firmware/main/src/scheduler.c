@@ -90,6 +90,7 @@ static void scheduler_task(void* params)
     // 500 毫秒检查一次计划任务，有到期的就执行
     const TickType_t freq = 500 / portTICK_PERIOD_MS;
     TickType_t last_wake_time = xTaskGetTickCount();
+
     Schedule* sch = &s_scheduler_status.schedule;
     for (;;) {
         struct tm rtc_now = Rtc_local_now();

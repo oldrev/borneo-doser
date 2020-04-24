@@ -24,14 +24,13 @@ static EventGroupHandle_t s_wifi_event_group;
 static const int CONNECTED_BIT = BIT0;
 static const int ESPTOUCH_DONE_BIT = BIT1;
 static const int GOT_IP_BIT = BIT2;
-static const char* TAG = "SMART_CONFIG";
+static const char* TAG = "WIFI";
 
 static void smartconfig_task(void* parm);
 
 static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
     if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_START) {
-        xTaskCreate(smartconfig_task, "smartconfig_task", 4096, NULL, 3, NULL);
     } else if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_DISCONNECTED) {
         esp_wifi_connect();
         xEventGroupClearBits(s_wifi_event_group, CONNECTED_BIT);
@@ -74,6 +73,7 @@ static void event_handler(void* arg, esp_event_base_t event_base, int32_t event_
 
 static void smartconfig_task(void* parm)
 {
+    ESP_LOGI(TAG, "Starting the SmartConfig task");
     ESP_ERROR_CHECK(esp_smartconfig_set_type(SC_TYPE_ESPTOUCH_AIRKISS));
     smartconfig_start_config_t cfg = SMARTCONFIG_START_CONFIG_DEFAULT();
     ESP_ERROR_CHECK(esp_smartconfig_start(&cfg));
@@ -84,7 +84,7 @@ static void smartconfig_task(void* parm)
             ESP_LOGI(TAG, "WiFi Connected to ap");
         }
         if (ux_bits & ESPTOUCH_DONE_BIT) {
-            ESP_LOGI(TAG, "smartconfig over");
+            ESP_LOGI(TAG, "SmartConfig is completed.");
             esp_smartconfig_stop();
             vTaskDelete(NULL);
         }
@@ -104,33 +104,44 @@ int Wifi_init()
     ESP_ERROR_CHECK(esp_event_handler_register(SC_EVENT, ESP_EVENT_ANY_ID, &event_handler, NULL));
 
     ESP_ERROR_CHECK(esp_wifi_set_mode(WIFI_MODE_STA));
-    ESP_ERROR_CHECK(esp_wifi_start());
     return 0;
 }
 
-int Wifi_try_connect()
+int Wifi_start()
 {
+    int result = 0;
+    result = esp_wifi_start();
+    if (result != 0) {
+        return result;
+    }
     // 尝试连接路由器
     // wifi_config_t wifi_config;
     // ESP_ERROR_CHECK(esp_wifi_get_config(ESP_IF_WIFI_STA, &wifi_config));
-    ESP_LOGI(TAG, ">>>>>> WiFi connecting...");
-    int result = esp_wifi_connect();
+    ESP_LOGI(TAG, ">>>>>> trying to connect WiFi AP...");
+    result = esp_wifi_connect();
     if (result != ESP_OK) {
-        return result;
+        // 如果不 OK 就尝试配网
+        ESP_LOGE(TAG, "Failed to connect the AP.");
+        xTaskCreate(smartconfig_task, "smartconfig_task", 4096, NULL, 3, NULL);
     }
 
     return 0;
 }
 
-int Wifi_smartconfig_and_wait()
+int Wifi_restore_and_reboot()
 {
-    // 阻塞程序直到 WiFi 配网完成
-    while (1) {
-        EventBits_t bits
-            = xEventGroupWaitBits(s_wifi_event_group, CONNECTED_BIT | ESPTOUCH_DONE_BIT, true, false, portMAX_DELAY);
-        if (bits & ESPTOUCH_DONE_BIT || bits & CONNECTED_BIT) {
-            break;
+    ESP_LOGI(TAG, "Starting to restore WiFi config...");
+    int error = esp_wifi_restore();
+    if (error == ESP_ERR_WIFI_NOT_INIT) {
+        wifi_init_config_t cfg = WIFI_INIT_CONFIG_DEFAULT();
+        ESP_ERROR_CHECK(esp_wifi_init(&cfg));
+        error = esp_wifi_restore();
+        if (error != 0) {
+            return error;
         }
+    } else if (error != 0) {
+        return error;
     }
-    return 0;
+    ESP_LOGI(TAG, "Rebooting system...");
+    esp_restart();
 }

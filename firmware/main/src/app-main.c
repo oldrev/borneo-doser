@@ -82,9 +82,15 @@ static void on_button_pushed(void* arg, esp_event_base_t event_base, int32_t eve
 
 static void on_button_long_pushed(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
+    // 上电 100 秒内长按按钮将恢复转入待配网状态
     int button_id = *((int*)event_data);
     ESP_LOGI(TAG, "Button %d long pressed", button_id);
-    OnboardLed_start_slow_blink();
+    uint64_t now = esp_timer_get_time() / 1000000ULL;
+    if (button_id == 0 && now < 100) {
+        OnboardLed_start_fast_blink();
+        // 重新恢复出厂设置
+        Wifi_restore_and_reboot();
+    }
 }
 
 static int App_init_devices()
@@ -151,10 +157,7 @@ void app_main()
 
     ESP_ERROR_CHECK(Wifi_init());
 
-    int result = Wifi_try_connect();
-    if (result != ESP_OK) {
-        ESP_ERROR_CHECK(Wifi_smartconfig_and_wait());
-    }
+    ESP_ERROR_CHECK(Wifi_start());
 
     ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &connect_handler, NULL));
     ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disconnect_handler, NULL));
