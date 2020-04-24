@@ -42,6 +42,8 @@
 static int App_init_devices();
 static void App_idle_task();
 
+static const char* TAG = "APP_MAIN";
+
 const RpcMethodEntry RPC_METHOD_TABLE[] = {
     { .name = "sys.hello", .callback = &RpcMethod_sys_hello },
     { .name = "doser.pump_until", .callback = &RpcMethod_doser_pump_until },
@@ -51,7 +53,7 @@ const RpcMethodEntry RPC_METHOD_TABLE[] = {
     { .name = "doser.schedule_set", .callback = &RpcMethod_doser_schedule_set },
 };
 
-static const char* TAG = "APP_MAIN";
+const SimpleButton SIMPLE_BUTTONS[] = { { .id = 0, .io_pin = 27 } };
 
 static void disconnect_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {}
 
@@ -71,11 +73,18 @@ static void connect_handler(void* arg, esp_event_base_t event_base, int32_t even
     OnboardLed_start_slow_blink();
 }
 
-
-static void mode_button_pushed(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {
-    int button_io_pin = *((int*)event_data);
-    ESP_LOGI(TAG, "Button %d pressed", button_io_pin);
+static void on_button_pushed(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+{
+    int button_id = *((int*)event_data);
+    ESP_LOGI(TAG, "Button %d pressed", button_id);
     OnboardLed_start_fast_blink();
+}
+
+static void on_button_long_pushed(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+{
+    int button_id = *((int*)event_data);
+    ESP_LOGI(TAG, "Button %d long pressed", button_id);
+    OnboardLed_start_slow_blink();
 }
 
 static int App_init_devices()
@@ -87,8 +96,12 @@ static int App_init_devices()
     OnboardLed_on();
 
     // 初始化模式按钮
-    ESP_ERROR_CHECK(SimplePushButton_init(27)); //IO27
-    ESP_ERROR_CHECK(esp_event_handler_register(BORNEO_BUTTON_EVENTS, BORNEO_EVENT_BUTTON_PUSHED, &mode_button_pushed, NULL));
+    ESP_ERROR_CHECK(SimpleButtonGroup_init(SIMPLE_BUTTONS, 1)); // IO27
+    ESP_ERROR_CHECK(
+        esp_event_handler_register(BORNEO_BUTTON_EVENTS, BORNEO_EVENT_BUTTON_PRESSED, &on_button_pushed, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(
+        BORNEO_BUTTON_EVENTS, BORNEO_EVENT_BUTTON_LONG_PRESSED, &on_button_long_pushed, NULL));
+    ESP_ERROR_CHECK(SimpleButtonGroup_start());
 
     ESP_ERROR_CHECK(Serial_init());
 
