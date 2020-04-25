@@ -61,10 +61,9 @@ static void disconnect_handler(void* arg, esp_event_base_t event_base, int32_t e
 static void connect_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
     ESP_LOGI("APP", "Connected to station.");
-    /*
+
     ESP_ERROR_CHECK(Broadcast_init());
     ESP_ERROR_CHECK(Broadcast_start());
-    */
 
     ESP_ERROR_CHECK(Rpc_init(RPC_METHOD_TABLE, sizeof(RPC_METHOD_TABLE) / sizeof(RpcMethodEntry)));
     ESP_ERROR_CHECK(Rpc_start());
