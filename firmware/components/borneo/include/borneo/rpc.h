@@ -14,6 +14,8 @@ enum {
     RPC_ERROR_SERVER_ERROR_BEGIN = -32000,
 };
 
+#define RPC_INVALID_ID __UINT64_MAX__
+
 typedef struct {
     int32_t code;
     const char* message;

@@ -18,7 +18,7 @@ static const char* TAG = "RPC";
 
 static int make_response_result(uint8_t* tx_buf, size_t* tx_buf_size, cJSON* result, uint64_t id);
 static int make_response_error(uint8_t* tx_buf, size_t* tx_buf_size, int code, const char* message, uint64_t id);
-static int handle_request(const cJSON* root, uint8_t* tx_buf, size_t* tx_buf_size);
+static int handle_single_request(const cJSON* root, uint8_t* tx_buf, size_t* tx_buf_size);
 static int invoke_rpc_method(uint8_t* tx_buf, size_t* tx_buf_size, const char* method_name, cJSON* params, uint64_t id);
 
 static const RpcMethodEntry* s_rpc_methods;
@@ -30,7 +30,50 @@ static int handle_rpc(const void* rxbuf, size_t rxbuf_size, void* txbuf, size_t*
     // 解析 JSON
     // 这里需要确保有结束零，否则可能崩溃
     cJSON* root = cJSON_Parse(rxbuf);
-    ESP_ERROR_CHECK(handle_request(root, txbuf, txbuf_size));
+
+    // 这里检查是否是单个调用还是批量调用
+    if (cJSON_IsArray(root)) { // 多个调用
+        int method_count = cJSON_GetArraySize(root);
+        if (method_count <= 0) {
+            ESP_ERROR_CHECK(
+                make_response_error(txbuf, txbuf_size, RPC_ERROR_INVALID_REQUEST, "Invalid request", RPC_INVALID_ID));
+            goto __BAD_REQUEST_EXIT;
+        }
+
+        // 为了方便简单，多个调用组包这里不经过 cJSON
+        uint8_t* output_buf = (uint8_t*)txbuf;
+        size_t txbuf_offset = 0;
+        size_t txbuf_left_size = *txbuf_size;
+
+        // 先写入开头的 '['
+        output_buf[txbuf_offset] = '[';
+        txbuf_offset++;
+        txbuf_left_size--;
+
+        cJSON* single_rpc = NULL;
+        cJSON_ArrayForEach(single_rpc, root) {
+            // 执行批量里的单个调用并写入发送缓冲区
+            size_t single_tx_size = txbuf_left_size;
+            ESP_ERROR_CHECK(handle_single_request(single_rpc, &output_buf[txbuf_offset], &single_tx_size));
+            txbuf_left_size -= single_tx_size;
+            txbuf_offset += single_tx_size;
+
+            // 写入每个结构之后的逗号分割
+            output_buf[txbuf_offset] = ',';
+            txbuf_offset++;
+            txbuf_left_size--;
+        }
+        // 最后写入结束的 ']'
+        output_buf[txbuf_offset - 1] = ']'; // 最后循环用 ']' 替换 ','
+        // 完成
+        *txbuf_size = txbuf_offset;
+    }
+    else {
+        ESP_ERROR_CHECK(handle_single_request(root, txbuf, txbuf_size));
+    }
+
+__BAD_REQUEST_EXIT:
+
     if (root != NULL) {
         cJSON_Delete(root);
     }
@@ -78,7 +121,7 @@ static int make_response_result(uint8_t* tx_buf, size_t* tx_buf_size, cJSON* res
 
     cJSON_PrintPreallocated(result_root, (char*)tx_buf, *tx_buf_size, 0);
     cJSON_Delete(result_root);
-    size_t json_len = strnlen((const char*)tx_buf, *tx_buf_size) + 1;
+    size_t json_len = strnlen((const char*)tx_buf, *tx_buf_size);
     if (json_len > *tx_buf_size) {
         ret = -1;
     } else {
@@ -94,15 +137,25 @@ static int make_response_error(uint8_t* tx_buf, size_t* tx_buf_size, int code, c
 {
     int ret = 0;
     cJSON* result_root = cJSON_CreateObject();
-    cJSON* error_node = cJSON_CreateObject();
+
+
     cJSON_AddStringToObject(result_root, "jsonrpc", "2.0");
-    cJSON_AddNumberToObject(result_root, "id", (double)id);
+
+    if (id != RPC_INVALID_ID) {
+        cJSON_AddNumberToObject(result_root, "id", (double)id);
+    }
+
+    cJSON* error_node = cJSON_CreateObject();
     cJSON_AddNumberToObject(error_node, "code", code);
     cJSON_AddStringToObject(error_node, "message", message);
+
     cJSON_AddItemToObject(result_root, "error", error_node);
     cJSON_PrintPreallocated(result_root, (char*)tx_buf, *tx_buf_size, 0);
+
     cJSON_Delete(result_root);
-    *tx_buf_size = strlen((const char*)tx_buf) + 1;
+
+    *tx_buf_size = strlen((const char*)tx_buf);
+
     return ret;
 }
 
@@ -125,7 +178,7 @@ static int invoke_rpc_method(uint8_t* tx_buf, size_t* tx_buf_size, const char* m
 /**
  * 处理 JSON-RPC 请求
  */
-static int handle_request(const cJSON* root, uint8_t* txbuf, size_t* txbuf_size)
+static int handle_single_request(const cJSON* root, uint8_t* txbuf, size_t* txbuf_size)
 {
     int ret = 0;
     uint64_t id;
@@ -135,13 +188,15 @@ static int handle_request(const cJSON* root, uint8_t* txbuf, size_t* txbuf_size)
     cJSON* params_json = cJSON_GetObjectItemCaseSensitive(root, "params");
     cJSON* id_json = cJSON_GetObjectItemCaseSensitive(root, "id");
 
+    int root_ok = root != NULL && cJSON_IsObject(root);
     int jsonrpc_ok
         = jsonrpc_json != NULL && cJSON_IsString(jsonrpc_json) && strcmp(jsonrpc_json->valuestring, "2.0") == 0;
     int method_name_ok = method_json != NULL && cJSON_IsString(method_json);
     int params_ok = params_json != NULL && cJSON_IsArray(params_json);
     int id_ok = id_json != NULL && cJSON_IsNumber(id_json);
 
-    if (jsonrpc_ok && method_name_ok && params_ok && id_ok) {
+    if (root_ok && jsonrpc_ok && method_name_ok && params_ok && id_ok) {
+        ESP_LOGI(TAG, "Calling RPC method: %s", method_json->valuestring);
         id = (uint64_t)id_json->valuedouble;
         ret = invoke_rpc_method(txbuf, txbuf_size, method_json->valuestring, params_json, id);
     } else { // 格式解析错误，返回错误消息

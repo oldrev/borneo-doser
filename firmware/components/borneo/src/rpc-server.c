@@ -157,12 +157,13 @@ static int handle_buffer(uint8_t* rx_buf, size_t* recv_size, size_t* size_to_sen
         size_t tx_size = MAX_TX_BUF_SIZE - *size_to_send;
         // 下面将提供的缓冲区解析 JSON-RPC 然后执行
         // 每次执行结果附加到 tx_buf 里，最后一次发送
-        // 下面的 JSON-RPC 响应结果写道 tx_buf 里的数据最后必须 '\0' 结束，tx_size
-        // 的长度也要计入最后的 '\0'
+        // 下面的 JSON-RPC 响应结果写道 tx_buf 里的数据最后不能包含 '\0'
         int ret = s_context.request_handler->handle_rpc(rx_buf, request_buf_size, tx_buf, &tx_size);
         if (ret != 0) {
             return ret;
         }
+        tx_buf[tx_size] = '\0';
+        tx_size++; // 留出 \0
         *size_to_send += tx_size;
         tx_buf += tx_size;
         assert(*size_to_send <= MAX_TX_BUF_SIZE);
