@@ -10,7 +10,6 @@
 
 #include "borneo/devices/leds.h"
 
-#define ONBOARD_LED_PERIOD 100
 #define FAST_INTERVAL 200
 #define SLOW_INTERVAL 2000
 
@@ -80,9 +79,8 @@ void OnboardLed_drive(uint32_t now)
 {
     // 忽略常亮常灭
     if (s_onboard_led_status.mode == ONBOARD_LED_FAST_BLINK || s_onboard_led_status.mode == ONBOARD_LED_SLOW_BLINK) {
-        int off_interval = s_onboard_led_status.mode == ONBOARD_LED_FAST_BLINK ? FAST_INTERVAL : SLOW_INTERVAL;
-        int interval = s_onboard_led_status.is_on ? off_interval : ONBOARD_LED_PERIOD;
-        if ((now - s_onboard_led_status.last_time) > interval) {
+        int interval = s_onboard_led_status.mode == ONBOARD_LED_FAST_BLINK ? FAST_INTERVAL : SLOW_INTERVAL;
+        if ((now - s_onboard_led_status.last_time) >= interval) {
             if (s_onboard_led_status.is_on) {
                 led_reset();
             } else {

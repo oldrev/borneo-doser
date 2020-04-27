@@ -131,7 +131,7 @@ static int App_init_devices()
  */
 static void App_idle_task()
 {
-    const TickType_t freq = 50 / portTICK_PERIOD_MS;
+    const TickType_t freq = 100 / portTICK_PERIOD_MS;
     TickType_t last_wake_time = xTaskGetTickCount();
     for (;;) {
         // 驱动板载 LED
