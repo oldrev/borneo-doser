@@ -45,7 +45,7 @@ int BufferWriter_write_char(BufferWriter* writer, char ch) {
     return 1;
 }
 
-uint8_t BufferWriter_advance(BufferWriter* writer, size_t size)
+size_t BufferWriter_advance(BufferWriter* writer, size_t size)
 {
     if ((writer->capacity - writer->written_count) < size) {
         return -1;

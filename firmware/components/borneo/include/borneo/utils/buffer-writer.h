@@ -19,7 +19,7 @@ int BufferWriter_init(BufferWriter* writer, void* buffer, size_t capacity);
 int BufferWriter_write(BufferWriter* writer, const void* buf, size_t size);
 int BufferWriter_write_char(BufferWriter* writer, char ch);
 
-uint8_t BufferWriter_advance(BufferWriter* writer, size_t size);
+size_t BufferWriter_advance(BufferWriter* writer, size_t size);
 
 inline size_t BufferWriter_available(BufferWriter* writer) { return writer->capacity - writer->written_count; }
 
