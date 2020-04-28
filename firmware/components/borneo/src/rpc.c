@@ -9,6 +9,7 @@
 #include <esp_log.h>
 #include <esp_system.h>
 
+#include "borneo/utils/buffer-writer.h"
 #include "borneo/device-config.h"
 #include "borneo/rpc-server.h"
 #include "borneo/rpc.h"
@@ -41,34 +42,32 @@ static int handle_rpc(const void* rxbuf, size_t rxbuf_size, void* txbuf, size_t*
         }
 
         // 为了方便简单，多个调用组包这里不经过 cJSON
-        uint8_t* output_buf = (uint8_t*)txbuf;
-        size_t txbuf_offset = 0;
-        size_t txbuf_left_size = *txbuf_size;
+        BufferWriter bw;
+        BufferWriter_init(&bw, txbuf, *txbuf_size);
 
         // 先写入开头的 '['
-        output_buf[txbuf_offset] = '[';
-        txbuf_offset++;
-        txbuf_left_size--;
+        BufferWriter_write_char(&bw, '[');
 
         cJSON* single_rpc = NULL;
-        cJSON_ArrayForEach(single_rpc, root) {
+        size_t method_index = 0;
+        cJSON_ArrayForEach(single_rpc, root)
+        {
             // 执行批量里的单个调用并写入发送缓冲区
-            size_t single_tx_size = txbuf_left_size;
-            ESP_ERROR_CHECK(handle_single_request(single_rpc, &output_buf[txbuf_offset], &single_tx_size));
-            txbuf_left_size -= single_tx_size;
-            txbuf_offset += single_tx_size;
+            size_t single_tx_size = BufferWriter_available(&bw);
+            uint8_t* available_buffer = BufferWriter_available_buffer(&bw);
+            ESP_ERROR_CHECK(handle_single_request(single_rpc, available_buffer, &single_tx_size));
+            BufferWriter_advance(&bw, single_tx_size);
 
-            // 写入每个结构之后的逗号分割
-            output_buf[txbuf_offset] = ',';
-            txbuf_offset++;
-            txbuf_left_size--;
+            method_index++;
+            if (method_index < method_count) {
+                // 写入每个结构之后的逗号分割
+                BufferWriter_write_char(&bw, ',');
+            }
         }
-        // 最后写入结束的 ']'
-        output_buf[txbuf_offset - 1] = ']'; // 最后循环用 ']' 替换 ','
-        // 完成
-        *txbuf_size = txbuf_offset;
-    }
-    else {
+        // 最后写入结束的 ']'，并完成
+        BufferWriter_write_char(&bw, ']');
+        *txbuf_size = bw.written_count;
+    } else {
         ESP_ERROR_CHECK(handle_single_request(root, txbuf, txbuf_size));
     }
 
@@ -137,7 +136,6 @@ static int make_response_error(uint8_t* tx_buf, size_t* tx_buf_size, int code, c
 {
     int ret = 0;
     cJSON* result_root = cJSON_CreateObject();
-
 
     cJSON_AddStringToObject(result_root, "jsonrpc", "2.0");
 

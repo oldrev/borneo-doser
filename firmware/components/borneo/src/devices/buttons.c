@@ -6,6 +6,7 @@
 #include <freertos/queue.h>
 #include <driver/gpio.h>
 #include <esp_event.h>
+#include <esp_log.h>
 
 #include "borneo/devices/buttons.h"
 
@@ -17,12 +18,16 @@
 
 ESP_EVENT_DEFINE_BASE(BORNEO_BUTTON_EVENTS);
 
+#define TAG "BUTTONS"
+
 SimpleButtonGroupStatus s_status;
 
 static void simple_button_group_task(void* param);
 
 int SimpleButtonGroup_init(const SimpleButton* buttons, size_t n)
 {
+    ESP_LOGI(TAG, "Initializing");
+
     int error = 0;
     memset(&s_status, 0, sizeof(s_status));
     s_status.buttons = (SimpleButtonStatus*)malloc(sizeof(SimpleButtonStatus) * n);
@@ -59,6 +64,7 @@ int SimpleButtonGroup_start()
 {
     // 启动一个优先级比较高的进程来监测按钮状态
     xTaskCreate(&simple_button_group_task, "simple_button_group_task", 2048, NULL, tskIDLE_PRIORITY + 1, NULL);
+    ESP_LOGI(TAG, "Buttons task started.");
     return 0;
 }
 
