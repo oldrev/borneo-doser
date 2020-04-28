@@ -8,6 +8,7 @@
 #include <freertos/event_groups.h>
 #include <freertos/task.h>
 
+#include "esp_timer.h"
 #include "esp_attr.h"
 #include "esp_event.h"
 #include "esp_log.h"
@@ -22,7 +23,11 @@ static const char* TAG = "SNTP";
 static const char* SNTP_TZ = "CST-8";
 
 static void on_time_sync(struct timeval* tv);
+static void sntp_task(void* params);
+
 static struct tm local_now();
+
+static uint64_t s_last_sntp_time;
 
 int Sntp_init()
 {
@@ -30,6 +35,7 @@ int Sntp_init()
     sntp_setoperatingmode(SNTP_OPMODE_POLL);
     sntp_setservername(0, "ntp.aliyun.com");
     sntp_set_time_sync_notification_cb(on_time_sync);
+    s_last_sntp_time = 0;
     return 0;
 }
 
@@ -43,6 +49,24 @@ int Sntp_is_sync_needed()
 
 int Sntp_try_sync_time()
 {
+    xTaskCreate(sntp_task, "sntp_task", 4096, NULL, tskIDLE_PRIORITY, NULL);
+    return 0;
+}
+
+int Sntp_drive_timer()
+{
+    uint64_t diff = esp_timer_get_time() - s_last_sntp_time;
+    // 24 小时同步一次
+    if (diff >= (24ULL * 3600ULL * 1000ULL * 1000ULL)) {
+        return Sntp_try_sync_time();
+    }
+    return 0;
+}
+
+static void sntp_task(void* param) 
+{
+    s_last_sntp_time = esp_timer_get_time();
+
     sntp_init();
 
     // wait for time to be set
@@ -53,7 +77,8 @@ int Sntp_try_sync_time()
     }
 
     if (retry > MAX_RETRY_COUNT) {
-        return -1;
+        ESP_LOGE(TAG, "Failed to do SNTP");
+        goto __TASK_EXIT;
     }
 
     struct tm timeinfo = local_now();
@@ -61,7 +86,8 @@ int Sntp_try_sync_time()
     strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
     ESP_LOGI(TAG, "The current date/time in Shanghai is: %s", strftime_buf);
 
-    return 0;
+__TASK_EXIT:    
+    vTaskDelete(NULL);
 }
 
 static void on_time_sync(struct timeval* tv)

@@ -54,10 +54,15 @@ int SimpleButtonGroup_init(const SimpleButton* buttons, size_t n)
     io_conf.pull_up_en = 0;
     error = gpio_config(&io_conf);
     if (error != 0) {
-        return error;
+        goto __FAILED_AND_FREE;
     }
 
     return 0;
+
+__FAILED_AND_FREE:
+    free(s_status.buttons);
+    s_status.buttons = NULL;
+    return error;
 }
 
 int SimpleButtonGroup_start()

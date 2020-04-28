@@ -2,6 +2,7 @@
 #include <time.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 
 #include <driver/gpio.h>
 #include <esp32/clk.h>
@@ -76,6 +77,8 @@ int DS1302_is_halted()
 
 void DS1302_now(struct tm* now)
 {
+    assert(now != NULL);
+
     begin_read(DS1302_REG_BURST);
     now->tm_sec = (uint8_t)bcd2dec(read_byte() & 0b01111111);
     now->tm_min = (uint8_t)bcd2dec(read_byte() & 0b01111111);
@@ -90,6 +93,8 @@ void DS1302_now(struct tm* now)
 
 void DS1302_set_datetime(const struct tm* dt)
 {
+    assert(dt != NULL);
+
     begin_write(DS1302_REG_WP);
     write_byte(0b00000000);
     end_io();

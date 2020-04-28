@@ -4,11 +4,12 @@
 
 #include "borneo/utils/buffer-writer.h"
 
-int BufferWriter_init(BufferWriter* writer, void* buffer, size_t capacity) 
-{ 
-    assert(writer != NULL); 
+int BufferWriter_init(BufferWriter* writer, void* buffer, size_t capacity)
+{
+    assert(writer != NULL);
     assert(buffer != NULL);
     assert(capacity > 0);
+
     memset(writer, 0, sizeof(BufferWriter));
     writer->buffer = (uint8_t*)buffer;
     writer->capacity = capacity;
@@ -35,7 +36,10 @@ int BufferWriter_write(BufferWriter* writer, const void* buf, size_t size)
     return size;
 }
 
-int BufferWriter_write_char(BufferWriter* writer, char ch) {
+int BufferWriter_write_char(BufferWriter* writer, char ch)
+{
+    assert(writer != NULL);
+
     if ((writer->capacity - writer->written_count) < 1) {
         return -1;
     }
@@ -47,6 +51,8 @@ int BufferWriter_write_char(BufferWriter* writer, char ch) {
 
 size_t BufferWriter_advance(BufferWriter* writer, size_t size)
 {
+    assert(writer != NULL);
+
     if ((writer->capacity - writer->written_count) < size) {
         return -1;
     }

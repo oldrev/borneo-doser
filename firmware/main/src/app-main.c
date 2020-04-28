@@ -137,6 +137,10 @@ static void App_idle_task()
         // 驱动板载 LED
         uint32_t now = xTaskGetTickCount() * portTICK_PERIOD_MS;
         OnboardLed_drive(now);
+
+        // 驱动 SNTP 定时器
+        Sntp_drive_timer();
+
         vTaskDelayUntil(&last_wake_time, freq);
     }
 
@@ -145,7 +149,16 @@ static void App_idle_task()
 
 void app_main()
 {
-    ESP_ERROR_CHECK(nvs_flash_init());
+    // Initialize NVS.
+    esp_err_t err = nvs_flash_init();
+    // 如果 NVS 格式更新了就只有擦除了
+    if (err == ESP_ERR_NVS_NO_FREE_PAGES || err == ESP_ERR_NVS_NEW_VERSION_FOUND) {
+        ESP_ERROR_CHECK(nvs_flash_erase());
+        err = nvs_flash_init();
+    }
+    ESP_ERROR_CHECK(err);
+
+    // 启动主事件循环
     ESP_ERROR_CHECK(esp_event_loop_create_default());
 
     gpio_install_isr_service(0);

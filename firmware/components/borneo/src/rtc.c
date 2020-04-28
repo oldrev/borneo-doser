@@ -1,6 +1,7 @@
 #include <stdint.h>
 #include <time.h>
 #include <memory.h>
+#include <assert.h>
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/FreeRTOSConfig.h>
@@ -35,7 +36,11 @@ struct tm Rtc_local_now() { return s_now; }
 
 time_t Rtc_timestamp() { return mktime(&s_now); }
 
-void Rtc_set_datetime(const struct tm* dt) { DS1302_set_datetime(dt); }
+void Rtc_set_datetime(const struct tm* dt)
+{
+    assert(dt != NULL);
+    DS1302_set_datetime(dt);
+}
 
 static void rtc_task()
 {

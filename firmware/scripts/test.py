@@ -3,7 +3,7 @@ import json
 import time
 
 id_counter = 1
-DEVICE_IP = "192.168.1.8"
+DEVICE_IP = "192.168.1.9"
 
 def make_jsonrpc(method, params):
     global id_counter
@@ -34,9 +34,13 @@ def make_batch_jsonrpc(methods):
     b = bytes(jsonstr, 'utf-8') + b'\0'
     return b
 
+
+async def connect_async():
+    fut = asyncio.open_connection(DEVICE_IP, 1022)
+    return await asyncio.wait_for(fut, timeout=10)
+
 async def invoke_async(method, params):
-    fut = await asyncio.open_connection(DEVICE_IP, 1022)
-    reader, writer = await asyncio.wait_for(fut, timeout=10)
+    reader, writer = await connect_async()
 
     writer.write(make_jsonrpc(method, params))
     await writer.drain()
@@ -53,8 +57,7 @@ async def invoke_async(method, params):
 
 
 async def invoke_many_async(methods):
-    fut = asyncio.open_connection(DEVICE_IP, 1022)
-    reader, writer = await asyncio.wait_for(fut, timeout=10)
+    reader, writer = await connect_async()
     writer.write(make_batch_jsonrpc(methods))
     await writer.drain()
 
@@ -83,11 +86,11 @@ async def test_all_methods():
     response = await invoke_async('doser.status', [0, 3000])
     print('---------------------------------------')
     print(response)
-    #await invoke_async('doser.pump_until', [3, 3000])
-    #await invoke_async('doser.pump_until', [0, 3000])
-    #await invoke_async('doser.pump_until', [1, 6000])
-    #await invoke_async('doser.pump_until', [2, 9000])
-    #await invoke_async('doser.pump_until', [3, 12000])
+    await invoke_async('doser.pump_until', [0, 3000])
+    await invoke_async('doser.pump_until', [1, 6000])
+    await invoke_async('doser.pump_until', [2, 9000])
+    await invoke_async('doser.pump_until', [3, 12000])
+    return
     #return
     #await invoke_async('doser.pump', [0, 5.0])
 
@@ -116,4 +119,6 @@ async def test_all_methods():
     schedule = await invoke_async('doser.schedule_get', [])
     print(schedule)
 
-asyncio.run(test_all_methods())
+if __name__ == '__main__':
+    loop=asyncio.get_event_loop()
+    loop.run_until_complete(test_all_methods())

@@ -59,8 +59,6 @@ static void udp_client_task(void* params)
 
     vTaskDelete(NULL);
 
-
-    
     pbuf_free(p); // De-allocate packet buffer
     udp_remove(udp);
     vTaskDelete(NULL);

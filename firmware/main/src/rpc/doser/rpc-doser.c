@@ -13,7 +13,8 @@
 #include "borneo-doser/devices/pump.h"
 #include "borneo-doser/rpc/doser.h"
 
-RpcMethodResult RpcMethod_doser_status(const cJSON* params) {
+RpcMethodResult RpcMethod_doser_status(const cJSON* params)
+{
 
     RpcMethodResult result;
     /*
@@ -29,7 +30,7 @@ RpcMethodResult RpcMethod_doser_status(const cJSON* params) {
                     "isBusy":   false,  //  是否正在运行
                 },
                 {
-                    "name": "CH2",      
+                    "name": "CH2",
                     "speed": 12.5,
                     "isBusy":  false
                 },
@@ -44,7 +45,7 @@ RpcMethodResult RpcMethod_doser_status(const cJSON* params) {
     cJSON_AddItemToObject(result_json, "cpuTime", cJSON_CreateNumber((double)(esp_timer_get_time() / 1000ULL)));
 
     cJSON* channels_json = cJSON_CreateArray();
-    for(size_t i = 0; i < PUMP_MAX_CHANNELS ; i++) {
+    for (size_t i = 0; i < PUMP_MAX_CHANNELS; i++) {
         PumpChannelInfo info = Pump_get_channel_info(i);
         cJSON* channel_json = cJSON_CreateObject();
         cJSON_AddItemToObject(channel_json, "name", cJSON_CreateString(info.name));

@@ -5,7 +5,7 @@
             "includePath": [
                 "${workspaceFolder}/main/include/**",
                 "${workspaceFolder}/components/borneo/include/**",
-                "${env:IDF_PATH}/components/*/include"
+                "${env:IDF_PATH}/components/*/include/**"
             ],
             "defines": [
                 "_DEBUG",

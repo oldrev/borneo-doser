@@ -21,63 +21,10 @@ static int make_response_result(uint8_t* tx_buf, size_t* tx_buf_size, cJSON* res
 static int make_response_error(uint8_t* tx_buf, size_t* tx_buf_size, int code, const char* message, uint64_t id);
 static int handle_single_request(const cJSON* root, uint8_t* tx_buf, size_t* tx_buf_size);
 static int invoke_rpc_method(uint8_t* tx_buf, size_t* tx_buf_size, const char* method_name, cJSON* params, uint64_t id);
+static int handle_rpc(const void* rxbuf, size_t rxbuf_size, void* txbuf, size_t* txbuf_size);
 
 static const RpcMethodEntry* s_rpc_methods;
 static size_t s_rpc_method_count;
-
-static int handle_rpc(const void* rxbuf, size_t rxbuf_size, void* txbuf, size_t* txbuf_size)
-{
-    memset(txbuf, 0, *txbuf_size);
-    // 解析 JSON
-    // 这里需要确保有结束零，否则可能崩溃
-    cJSON* root = cJSON_Parse(rxbuf);
-
-    // 这里检查是否是单个调用还是批量调用
-    if (cJSON_IsArray(root)) { // 多个调用
-        int method_count = cJSON_GetArraySize(root);
-        if (method_count <= 0) {
-            ESP_ERROR_CHECK(
-                make_response_error(txbuf, txbuf_size, RPC_ERROR_INVALID_REQUEST, "Invalid request", RPC_INVALID_ID));
-            goto __BAD_REQUEST_EXIT;
-        }
-
-        // 为了方便简单，多个调用组包这里不经过 cJSON
-        BufferWriter bw;
-        BufferWriter_init(&bw, txbuf, *txbuf_size);
-
-        // 先写入开头的 '['
-        BufferWriter_write_char(&bw, '[');
-
-        cJSON* single_rpc = NULL;
-        size_t method_index = 0;
-        cJSON_ArrayForEach(single_rpc, root)
-        {
-            // 执行批量里的单个调用并写入发送缓冲区
-            size_t single_tx_size = BufferWriter_available(&bw);
-            uint8_t* available_buffer = BufferWriter_available_buffer(&bw);
-            ESP_ERROR_CHECK(handle_single_request(single_rpc, available_buffer, &single_tx_size));
-            BufferWriter_advance(&bw, single_tx_size);
-
-            method_index++;
-            if (method_index < method_count) {
-                // 写入每个结构之后的逗号分割
-                BufferWriter_write_char(&bw, ',');
-            }
-        }
-        // 最后写入结束的 ']'，并完成
-        BufferWriter_write_char(&bw, ']');
-        *txbuf_size = bw.written_count;
-    } else {
-        ESP_ERROR_CHECK(handle_single_request(root, txbuf, txbuf_size));
-    }
-
-__BAD_REQUEST_EXIT:
-
-    if (root != NULL) {
-        cJSON_Delete(root);
-    }
-    return 0;
-}
 
 const RpcRequestHandler REQUEST_HANDLER = {
     .handle_rpc = &handle_rpc,
@@ -203,4 +150,58 @@ static int handle_single_request(const cJSON* root, uint8_t* txbuf, size_t* txbu
     }
 
     return ret;
+}
+
+static int handle_rpc(const void* rxbuf, size_t rxbuf_size, void* txbuf, size_t* txbuf_size)
+{
+    memset(txbuf, 0, *txbuf_size);
+    // 解析 JSON
+    // 这里需要确保有结束零，否则可能崩溃
+    cJSON* root = cJSON_Parse(rxbuf);
+
+    // 这里检查是否是单个调用还是批量调用
+    if (cJSON_IsArray(root)) { // 多个调用
+        int method_count = cJSON_GetArraySize(root);
+        if (method_count <= 0) {
+            ESP_ERROR_CHECK(
+                make_response_error(txbuf, txbuf_size, RPC_ERROR_INVALID_REQUEST, "Invalid request", RPC_INVALID_ID));
+            goto __BAD_REQUEST_EXIT;
+        }
+
+        // 为了方便简单，多个调用组包这里不经过 cJSON
+        BufferWriter bw;
+        BufferWriter_init(&bw, txbuf, *txbuf_size);
+
+        // 先写入开头的 '['
+        BufferWriter_write_char(&bw, '[');
+
+        cJSON* single_rpc = NULL;
+        size_t method_index = 0;
+        cJSON_ArrayForEach(single_rpc, root)
+        {
+            // 执行批量里的单个调用并写入发送缓冲区
+            size_t single_tx_size = BufferWriter_available(&bw);
+            uint8_t* available_buffer = BufferWriter_available_buffer(&bw);
+            ESP_ERROR_CHECK(handle_single_request(single_rpc, available_buffer, &single_tx_size));
+            BufferWriter_advance(&bw, single_tx_size);
+
+            method_index++;
+            if (method_index < method_count) {
+                // 写入每个结构之后的逗号分割
+                BufferWriter_write_char(&bw, ',');
+            }
+        }
+        // 最后写入结束的 ']'，并完成
+        BufferWriter_write_char(&bw, ']');
+        *txbuf_size = bw.written_count;
+    } else {
+        ESP_ERROR_CHECK(handle_single_request(root, txbuf, txbuf_size));
+    }
+
+__BAD_REQUEST_EXIT:
+
+    if (root != NULL) {
+        cJSON_Delete(root);
+    }
+    return 0;
 }
