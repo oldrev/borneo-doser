@@ -66,7 +66,7 @@ int DS1302_init()
     return 0;
 }
 
-int DS1302_is_halted()
+bool DS1302_is_halted()
 {
     begin_read(DS1302_REG_SECONDS);
     uint8_t seconds = read_byte();

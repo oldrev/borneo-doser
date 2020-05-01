@@ -9,7 +9,7 @@ extern "C" {
 /* Declarations of this file */
 
 int DS1302_init();
-int DS1302_is_halted();
+bool DS1302_is_halted();
 void DS1302_now(struct tm* now);
 void DS1302_set_datetime(const struct tm* dt);
 void DS1302_halt();

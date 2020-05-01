@@ -21,7 +21,9 @@ FILE(GLOB_RECURSE ALL_CPP_SOURCES
 
 FILE(GLOB_RECURSE ALL_HEADERS
     "./main/include/*.h" 
+    "./main/include/*.hpp" 
     "./components/*/include/*.h" 
+    "./components/*/include/*.hpp" 
 )
 
 clangformat_setup(${ALL_C_SOURCES} ${ALL_CPP_SOURCES} ${ALL_HEADERS})

@@ -5,11 +5,11 @@
 #include "borneo/rtc.h"
 #include "borneo/utils/bit-utils.h"
 
-int Cron_can_execute(const Cron* cron, const struct tm* rtc)
+bool Cron_can_execute(const Cron* cron, const struct tm* rtc)
 {
-    int dow_matched = get_bit_u8(cron->dow, rtc->tm_wday);
-    int hour_matched = get_bit_u32(cron->hours, rtc->tm_hour);
-    int minute_matched = cron->minute == rtc->tm_min;
+    bool dow_matched = get_bit_u8(cron->dow, rtc->tm_wday);
+    bool hour_matched = get_bit_u32(cron->hours, rtc->tm_hour);
+    bool minute_matched = cron->minute == rtc->tm_min;
     return minute_matched && hour_matched && dow_matched;
 }
 

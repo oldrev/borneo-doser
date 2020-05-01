@@ -24,7 +24,7 @@ typedef struct {
 } RpcError;
 
 typedef struct {
-    int is_succeed;
+    bool is_succeed;
     union {
         void* result;
         RpcError error;

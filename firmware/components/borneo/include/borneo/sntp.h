@@ -9,7 +9,7 @@ extern "C" {
 
 int Sntp_init();
 int Sntp_try_sync_time();
-int Sntp_is_sync_needed();
+bool Sntp_is_sync_needed();
 int Sntp_drive_timer();
 
 #ifdef __cplusplus

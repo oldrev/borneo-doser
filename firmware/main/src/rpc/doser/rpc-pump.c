@@ -35,12 +35,12 @@ RpcMethodResult RpcMethod_doser_pump_until(const cJSON* params)
         goto __FAILED_EXIT;
     }
 
-    result.is_succeed = 1;
+    result.is_succeed = true;
     result.result = NULL;
     return result;
 
 __FAILED_EXIT:
-    result.is_succeed = 0;
+    result.is_succeed = false;
     return result;
 }
 
@@ -70,12 +70,12 @@ RpcMethodResult RpcMethod_doser_pump(const cJSON* params)
         goto __FAILED_EXIT;
     }
 
-    result.is_succeed = 1;
+    result.is_succeed = true;
     result.result = NULL;
     return result;
 
 __FAILED_EXIT:
-    result.is_succeed = 0;
+    result.is_succeed = false;
     return result;
 }
 
@@ -105,11 +105,11 @@ RpcMethodResult RpcMethod_doser_speed_set(const cJSON* params)
         goto __FAILED_EXIT;
     }
 
-    result.is_succeed = 1;
+    result.is_succeed = true;
     result.result = NULL;
     return result;
 
 __FAILED_EXIT:
-    result.is_succeed = 0;
+    result.is_succeed = false;
     return result;
 }

@@ -25,7 +25,8 @@
         "gpio.h": "c",
         "esp_log.h": "c",
         "rpc.h": "c",
-        "freertosconfig.h": "c"
+        "freertosconfig.h": "c",
+        "sntp.h": "c"
     },
     "python.pythonPath": "C:\\Python38\\python.exe"
 }

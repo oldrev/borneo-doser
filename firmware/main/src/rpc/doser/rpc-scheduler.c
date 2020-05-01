@@ -167,12 +167,12 @@ RpcMethodResult RpcMethod_doser_schedule_set(const cJSON* params)
     }
 
     free(schedule);
-    result.is_succeed = 1;
+    result.is_succeed = true;
     result.result = NULL;
     return result;
 
 __FAILED_EXIT:
     free(schedule);
-    result.is_succeed = 0;
+    result.is_succeed = false;
     return result;
 }

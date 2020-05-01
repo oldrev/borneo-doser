@@ -39,7 +39,7 @@ int Sntp_init()
     return 0;
 }
 
-int Sntp_is_sync_needed()
+bool Sntp_is_sync_needed()
 {
     struct tm now = local_now();
     // Is time set? If not, tm_year will be (1970 - 1900).

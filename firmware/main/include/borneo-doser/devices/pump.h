@@ -46,7 +46,7 @@ int Pump_start_all(const double* vols);
 int Pump_on(int ch);
 int Pump_off(int ch);
 int Pump_update_speed(int ch, double speed);
-int Pump_is_any_busy();
+bool Pump_is_any_busy();
 PumpChannelInfo Pump_get_channel_info(int ch);
 
 #ifdef __cplusplus

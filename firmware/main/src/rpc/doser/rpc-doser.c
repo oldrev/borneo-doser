@@ -55,6 +55,6 @@ RpcMethodResult RpcMethod_doser_status(const cJSON* params)
     cJSON_AddItemToObject(result_json, "channels", channels_json);
 
     result.result = result_json;
-    result.is_succeed = 1;
+    result.is_succeed = true;
     return result;
 }

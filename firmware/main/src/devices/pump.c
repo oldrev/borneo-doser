@@ -158,14 +158,14 @@ double Pump_get_speed(int ch)
     return s_pump_status.config.speeds[ch];
 }
 
-int Pump_is_any_busy()
+bool Pump_is_any_busy()
 {
     for (size_t i = 0; i < sizeof(PUMP_PORT_TABLE) / sizeof(PumpPort); i++) {
         if (s_pump_status.channels[i].state != PUMP_STATE_IDLE) {
-            return 1;
+            return true;
         }
     }
-    return 0;
+    return false;
 }
 
 PumpChannelInfo Pump_get_channel_info(int ch)

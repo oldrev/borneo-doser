@@ -18,17 +18,17 @@
 #define STATUS_LED_PIN 4 // GPIO4
 #define ONBOARD_LED_PINS_MASK (1ULL << ONBOARD_LED_PIN) | (1ULL << STATUS_LED_PIN)
 
-enum {
+typedef enum {
     ONBOARD_LED_OFF = 0, //灭
     ONBOARD_LED_INFINITE = 1, // 常亮
     ONBOARD_LED_FAST_BLINK = 2, // 快闪
     ONBOARD_LED_SLOW_BLINK = 3, // 慢闪
-};
+} LedMode;
 
 typedef struct OnboardLedStatusTag {
-    volatile uint8_t mode;
+    volatile LedMode mode;
     volatile int32_t last_time;
-    volatile uint8_t is_on;
+    volatile bool is_on;
 } OnboardLedStatus;
 
 static OnboardLedStatus s_onboard_led_status;
@@ -97,7 +97,7 @@ static void led_set()
     if (!s_onboard_led_status.is_on) {
         gpio_set_level(ONBOARD_LED_PIN, 1);
         gpio_set_level(STATUS_LED_PIN, 1);
-        s_onboard_led_status.is_on = 1;
+        s_onboard_led_status.is_on = true;
     }
 }
 
@@ -106,6 +106,6 @@ static void led_reset()
     if (s_onboard_led_status.is_on) {
         gpio_set_level(ONBOARD_LED_PIN, 0);
         gpio_set_level(STATUS_LED_PIN, 0);
-        s_onboard_led_status.is_on = 0;
+        s_onboard_led_status.is_on = false;
     }
 }

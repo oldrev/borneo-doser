@@ -20,7 +20,7 @@ typedef struct {
 cJSON* Cron_to_json(const Cron* cron);
 int Cron_from_json(Cron* cron, const cJSON* json);
 
-int Cron_can_execute(const Cron* cron, const struct tm* rtc);
+bool Cron_can_execute(const Cron* cron, const struct tm* rtc);
 
 #ifdef __cplusplus
 }

@@ -91,7 +91,7 @@ static void simple_button_group_task(void* param)
             uint32_t pressed_on = s_status.buttons[i].pressed_on;
             uint32_t pressed_duration = now - pressed_on;
             uint32_t since_last_action = now - last_action;
-            int can_press = ((last_state == BUTTON_RELEASE || last_state == BUTTON_SHORT_PRESSED)
+            bool can_press = ((last_state == BUTTON_RELEASE || last_state == BUTTON_SHORT_PRESSED)
                                 && since_last_action >= PRESS_INTERVAL)
                 || (last_state == BUTTON_LONG_PRESSED && since_last_action >= LONG_PRESS_INTERVAL);
 

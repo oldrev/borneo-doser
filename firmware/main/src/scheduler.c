@@ -168,6 +168,6 @@ static int restore_default_config()
 {
     ESP_LOGI(TAG, "Restoring default config...");
     memset(&s_scheduler_status, 0, sizeof(s_scheduler_status));
-    s_scheduler_status.is_running = 0;
+    s_scheduler_status.is_running = false;
     return save_config();
 }

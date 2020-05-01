@@ -28,7 +28,7 @@ RpcMethodResult RpcMethod_sys_hello(const cJSON* params)
     cJSON* commands_node = cJSON_CreateArray();
     cJSON_AddItemToObject(result_json, "commands", commands_node);
 
-    RpcMethodResult rpc_result = { .is_succeed = 1, .result = result_json };
+    RpcMethodResult rpc_result = { .is_succeed = true, .result = result_json };
 
     return rpc_result;
 }
