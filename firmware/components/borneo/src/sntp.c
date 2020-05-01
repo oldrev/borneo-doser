@@ -1,20 +1,20 @@
-#include "borneo/sntp.h"
 
 #include <string.h>
 #include <sys/time.h>
-#include <time.h>
 
 #include <freertos/FreeRTOS.h>
 #include <freertos/event_groups.h>
 #include <freertos/task.h>
 
-#include "esp_timer.h"
-#include "esp_attr.h"
-#include "esp_event.h"
-#include "esp_log.h"
-#include "esp_sntp.h"
-#include "esp_system.h"
+#include <esp_timer.h>
+#include <esp_attr.h>
+#include <esp_event.h>
+#include <esp_log.h>
+#include <esp_sntp.h>
+#include <esp_system.h>
 
+#include "borneo/common.h"
+#include "borneo/sntp.h"
 #include "borneo/rtc.h"
 
 static const char* TAG = "SNTP";
@@ -63,7 +63,7 @@ int Sntp_drive_timer()
     return 0;
 }
 
-static void sntp_task(void* param) 
+static void sntp_task(void* param)
 {
     s_last_sntp_time = esp_timer_get_time();
 
@@ -86,7 +86,7 @@ static void sntp_task(void* param)
     strftime(strftime_buf, sizeof(strftime_buf), "%c", &timeinfo);
     ESP_LOGI(TAG, "The current date/time in Shanghai is: %s", strftime_buf);
 
-__TASK_EXIT:    
+__TASK_EXIT:
     vTaskDelete(NULL);
 }
 

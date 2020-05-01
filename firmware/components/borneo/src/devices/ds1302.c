@@ -1,5 +1,3 @@
-#include <stdint.h>
-#include <time.h>
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
@@ -13,6 +11,7 @@
 #include <freertos/event_groups.h>
 #include <freertos/task.h>
 
+#include "borneo/common.h"
 #include "borneo/devices/ds1302.h"
 #include "borneo/rtc.h"
 #include "borneo/utils/bcd.h"

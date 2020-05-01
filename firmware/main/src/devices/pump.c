@@ -1,6 +1,5 @@
 #include <assert.h>
 #include <math.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -19,6 +18,7 @@
 #include <nvs.h>
 #include <nvs_flash.h>
 
+#include "borneo/common.h"
 #include "borneo-doser/devices/pump.h"
 
 #define PUMP_TIMER_GROUP TIMER_GROUP_1

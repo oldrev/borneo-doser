@@ -1,7 +1,7 @@
-#include <stdint.h>
 #include <memory.h>
 #include <assert.h>
 
+#include "borneo/common.h"
 #include "borneo/utils/buffer-writer.h"
 
 int BufferWriter_init(BufferWriter* writer, void* buffer, size_t capacity)

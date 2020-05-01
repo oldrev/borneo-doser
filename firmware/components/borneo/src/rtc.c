@@ -1,5 +1,3 @@
-#include <stdint.h>
-#include <time.h>
 #include <memory.h>
 #include <assert.h>
 
@@ -10,6 +8,7 @@
 
 #include <esp_log.h>
 
+#include "borneo/common.h"
 #include "borneo/device-config.h"
 #include "borneo/rtc.h"
 #include "borneo/utils/time.h"

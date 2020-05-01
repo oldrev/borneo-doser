@@ -17,6 +17,7 @@
 #include <lwip/sys.h>
 #include <lwip/udp.h>
 
+#include "borneo/common.h"
 #include "borneo/broadcast.h"
 #include "borneo/device-config.h"
 #include "borneo/rtc.h"

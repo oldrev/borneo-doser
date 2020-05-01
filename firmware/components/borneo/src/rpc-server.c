@@ -12,6 +12,7 @@
 #include <lwip/sockets.h>
 #include <lwip/sys.h>
 
+#include "borneo/common.h"
 #include "borneo/device-config.h"
 #include "borneo/rpc-server.h"
 

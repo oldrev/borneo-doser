@@ -1,5 +1,6 @@
 #pragma once
 
+#include <time.h>
 #include "borneo/rtc.h"
 
 #ifdef __cplusplus

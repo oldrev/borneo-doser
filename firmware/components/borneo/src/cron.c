@@ -1,7 +1,6 @@
-#include <time.h>
 #include <cJSON.h>
-#include <stdint.h>
 
+#include "borneo/common.h"
 #include "borneo/cron.h"
 #include "borneo/rtc.h"
 #include "borneo/utils/bit-utils.h"

@@ -30,7 +30,7 @@ typedef struct {
 } SimpleButtonGroupStatus;
 
 typedef struct {
-    int id;
+    uint32_t id;
     int io_pin;
 } SimpleButton;
 

@@ -1,11 +1,8 @@
 
 
 #include <math.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/time.h>
-#include <time.h>
 
 #include <cJSON.h>
 
@@ -22,6 +19,7 @@
 #include <tcpip_adapter.h>
 #include <driver/gpio.h>
 
+#include "borneo/common.h"
 #include "borneo/broadcast.h"
 #include "borneo/cron.h"
 #include "borneo/devices/leds.h"

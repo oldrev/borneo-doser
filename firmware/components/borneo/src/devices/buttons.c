@@ -1,4 +1,3 @@
-#include <stdint.h>
 #include <stdlib.h>
 #include <memory.h>
 #include <freertos/FreeRTOS.h>
@@ -7,6 +6,8 @@
 #include <driver/gpio.h>
 #include <esp_event.h>
 #include <esp_log.h>
+
+#include "borneo/common.h"
 
 #include "borneo/devices/buttons.h"
 
@@ -86,7 +87,7 @@ static void simple_button_group_task(void* param)
         for (size_t i = 0; i < s_status.size; i++) {
             uint32_t now = xTaskGetTickCount() * portTICK_PERIOD_MS;
             // 处理按钮
-            int is_holding = gpio_get_level(s_status.buttons[i].io_pin);
+            bool is_holding = gpio_get_level(s_status.buttons[i].io_pin);
             uint32_t pressed_on = s_status.buttons[i].pressed_on;
             uint32_t pressed_duration = now - pressed_on;
             uint32_t since_last_action = now - last_action;

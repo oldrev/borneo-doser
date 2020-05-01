@@ -1,7 +1,6 @@
 // https://stackoverflow.com/questions/7960318/math-to-convert-seconds-since-1970-into-date-and-vice-versa
 
-#include <stdint.h>
-
+#include "borneo/common.h"
 #include "borneo/utils/time.h"
 
 const static int MDAYS[] = { 0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334 };

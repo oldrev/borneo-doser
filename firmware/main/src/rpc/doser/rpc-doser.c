@@ -1,10 +1,9 @@
-#include <stdint.h>
 #include <string.h>
-#include <time.h>
 
 #include <cJSON.h>
 #include <esp_timer.h>
 
+#include "borneo/common.h"
 #include "borneo/device-config.h"
 #include "borneo/rpc.h"
 #include "borneo/serial.h"

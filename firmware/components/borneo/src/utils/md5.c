@@ -3,6 +3,7 @@
 
 #include <mbedtls/md5.h>
 
+#include "borneo/common.h"
 #include "borneo/utils/md5.h"
 
 int MD5_compute_buffer(const void* buf, size_t size, uint8_t* digest)

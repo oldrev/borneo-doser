@@ -16,7 +16,16 @@
         "bit-utils.h": "c",
         "cron.h": "c",
         "time.h": "c",
-        "ds1302.h": "c"
+        "ds1302.h": "c",
+        "buttons.h": "c",
+        "common.h": "c",
+        "task.h": "c",
+        "device-config.h": "c",
+        "esp_smartconfig.h": "c",
+        "gpio.h": "c",
+        "esp_log.h": "c",
+        "rpc.h": "c",
+        "freertosconfig.h": "c"
     },
     "python.pythonPath": "C:\\Python38\\python.exe"
 }

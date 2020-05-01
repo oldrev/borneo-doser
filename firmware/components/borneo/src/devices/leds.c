@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "borneo/common.h"
 #include "borneo/devices/leds.h"
 
 #define FAST_INTERVAL 200

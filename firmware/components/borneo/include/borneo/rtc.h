@@ -1,5 +1,9 @@
 #pragma once
 
+#include <time.h>
+
+#include "borneo/common.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif

@@ -1,9 +1,9 @@
 #include "esp_system.h"
 #include <esp_err.h>
-#include <stdint.h>
 #include <stdio.h>
 #include <string.h>
 
+#include "borneo/common.h"
 #include "borneo/serial.h"
 #include "borneo/utils/md5.h"
 

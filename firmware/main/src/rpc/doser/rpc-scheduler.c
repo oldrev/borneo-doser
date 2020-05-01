@@ -1,13 +1,12 @@
 #include <malloc.h>
-#include <time.h>
 #include <math.h>
 #include <memory.h>
-#include <stdint.h>
 #include <string.h>
 
 #include <cJSON.h>
 #include <esp_log.h>
 
+#include "borneo/common.h"
 #include "borneo/device-config.h"
 #include "borneo/rpc.h"
 #include "borneo/serial.h"

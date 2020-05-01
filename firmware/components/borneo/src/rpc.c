@@ -1,6 +1,5 @@
 #include <assert.h>
 #include <malloc.h>
-#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -9,6 +8,7 @@
 #include <esp_log.h>
 #include <esp_system.h>
 
+#include "borneo/common.h"
 #include "borneo/utils/buffer-writer.h"
 #include "borneo/device-config.h"
 #include "borneo/rpc-server.h"

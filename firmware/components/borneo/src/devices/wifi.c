@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "borneo/common.h"
 #include "borneo/devices/wifi.h"
 
 /* FreeRTOS event group to signal when we are connected & ready to make a

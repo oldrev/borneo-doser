@@ -1,7 +1,7 @@
-#include <stdint.h>
 
 #include <cJSON.h>
 
+#include "borneo/common.h"
 #include "borneo/device-config.h"
 #include "borneo/rpc.h"
 #include "borneo/serial.h"

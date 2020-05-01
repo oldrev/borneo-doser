@@ -1,5 +1,7 @@
 #pragma once
 
+#include "borneo/common.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -10,7 +12,7 @@ extern "C" {
 
 typedef struct {
     char name[SCHEDULER_MAX_JOB_NAME];
-    int8_t can_parallel;
+    bool can_parallel;
     Cron when;
     double payloads[PUMP_MAX_CHANNELS];
     time_t last_execute_time;
@@ -22,7 +24,7 @@ typedef struct {
 } Schedule;
 
 typedef struct {
-    int is_running;
+    bool is_running;
     Schedule schedule;
 } SchedulerStatus;
 
