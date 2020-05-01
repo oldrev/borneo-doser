@@ -193,7 +193,6 @@ static int prepare_for_duration(int ch, int duration)
         return PUMP_ERROR_INVALID_VOLUME;
     }
 
-    ESP_LOGI(TAG, "Starting pump %dms for channel %d", duration, ch);
     for (size_t i = 0; i < sizeof(PUMP_PORT_TABLE) / sizeof(PumpPort); i++) {
         PumpChannel* pc = &s_pump_status.channels[ch];
         if (pc->state != PUMP_STATE_IDLE) {
@@ -219,8 +218,6 @@ static int start_timer()
             ESP_ERROR_CHECK(esp_timer_start_once(pc->timer, (uint64_t)pc->duration * 1000ULL));
         }
     }
-
-    ESP_LOGI(TAG, "Timer started...");
     return 0;
 }
 

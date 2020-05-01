@@ -37,8 +37,9 @@
 
 #include "borneo-doser/rpc/doser.h"
 
-static int App_init_devices();
+static int App_init_core_devices();
 static void App_idle_task();
+static void init_network_task();
 
 static const char* TAG = "APP_MAIN";
 
@@ -54,23 +55,21 @@ const RpcMethodEntry RPC_METHOD_TABLE[] = {
 
 const SimpleButton SIMPLE_BUTTONS[] = { { .id = 0, .io_pin = 27 } };
 
-static void disconnect_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data) {}
-
-static void connect_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+static void wifi_disconnect_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
 {
-    ESP_LOGI("APP", "Connected to station.");
+    // WiFi 断开了，让指示灯快闪
+    OnboardLed_start_fast_blink();
+}
 
-    ESP_ERROR_CHECK(Broadcast_init());
-    ESP_ERROR_CHECK(Broadcast_start());
-
-    ESP_ERROR_CHECK(Rpc_init(RPC_METHOD_TABLE, sizeof(RPC_METHOD_TABLE) / sizeof(RpcMethodEntry)));
-    ESP_ERROR_CHECK(Rpc_start());
-
-    ESP_ERROR_CHECK(Sntp_init());
-    // 上电有网络就执行一次 SNTP 时间同步
-    ESP_ERROR_CHECK(Sntp_try_sync_time());
-
+static void wifi_connect_handler(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
+{
+    // 已正常连接 WiFi，让指示灯慢速闪亮
     OnboardLed_start_slow_blink();
+
+    ESP_LOGI(TAG, "Connected to station.");
+
+    // 初始化依赖网络的部件
+    xTaskCreate(init_network_task, "init_network_task", 4096, NULL, tskIDLE_PRIORITY + 1, NULL);
 }
 
 static void on_button_pushed(void* arg, esp_event_base_t event_base, int32_t event_id, void* event_data)
@@ -93,13 +92,13 @@ static void on_button_long_pushed(void* arg, esp_event_base_t event_base, int32_
     }
 }
 
-static int App_init_devices()
+static int App_init_core_devices()
 {
 
     ESP_ERROR_CHECK(OnboardLed_init());
 
-    // 设备初始化自检开始，让板载 LED 常亮
-    OnboardLed_on();
+    // 核心设备初始化自检开始，让板载 LED 关闭
+    OnboardLed_off();
 
     // 初始化模式按钮
     ESP_ERROR_CHECK(SimpleButtonGroup_init(SIMPLE_BUTTONS, 1)); // IO27
@@ -161,17 +160,38 @@ void app_main()
 
     gpio_install_isr_service(0);
 
-    ESP_ERROR_CHECK(App_init_devices());
+    ESP_ERROR_CHECK(App_init_core_devices());
 
-    // 启动辅助进程
+    // 核心设备初始化完毕，可以启动辅助进程
     xTaskCreate(App_idle_task, "idle_task", 4096, NULL, tskIDLE_PRIORITY, NULL);
 
+    // 让指示灯快闪，表示开始网络初始化
     OnboardLed_start_fast_blink();
 
-    ESP_ERROR_CHECK(Wifi_init());
+    // 挂接 WiFi 事件
+    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &wifi_connect_handler, NULL));
+    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &wifi_disconnect_handler, NULL));
 
+    // 初始化 WiFi
+    ESP_ERROR_CHECK(Wifi_init());
     ESP_ERROR_CHECK(Wifi_start());
 
-    ESP_ERROR_CHECK(esp_event_handler_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &connect_handler, NULL));
-    ESP_ERROR_CHECK(esp_event_handler_register(WIFI_EVENT, WIFI_EVENT_STA_DISCONNECTED, &disconnect_handler, NULL));
+}
+
+
+static void init_network_task(void* params) {
+    // 初始化 UDP 广播
+    ESP_ERROR_CHECK(Broadcast_init());
+    ESP_ERROR_CHECK(Broadcast_start());
+
+    // 初始化 RPC 子系统
+    ESP_ERROR_CHECK(Rpc_init(RPC_METHOD_TABLE, sizeof(RPC_METHOD_TABLE) / sizeof(RpcMethodEntry)));
+    ESP_ERROR_CHECK(Rpc_start());
+
+    // 初始化 SNTP 部件
+    ESP_ERROR_CHECK(Sntp_init());
+    // 上电有网络就执行一次 SNTP 时间同步
+    ESP_ERROR_CHECK(Sntp_try_sync_time());
+
+    vTaskDelete(NULL);
 }

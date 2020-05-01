@@ -3,7 +3,7 @@ import json
 import time
 
 id_counter = 1
-DEVICE_IP = "192.168.1.15"
+DEVICE_IP = "192.168.1.8"
 
 def make_jsonrpc(method, params):
     global id_counter
