@@ -13,6 +13,8 @@ typedef struct RpcRequestHandlerTag {
 
 int RpcServer_init(RpcRequestHandler* request_handler);
 int RpcServer_start();
+int RpcServer_stop();
+int RpcServer_close();
 
 #ifdef __cplusplus
 }

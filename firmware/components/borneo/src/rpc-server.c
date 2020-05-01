@@ -16,15 +16,23 @@
 #include "borneo/device-config.h"
 #include "borneo/rpc-server.h"
 
+// 这里只能支持一个连接，需要改成 select() 的支持两个连接
+// 还有超时，五分钟不传输数据需要关闭连接
+
+#define SEND_TIMEOUT    5
+#define RECV_TIMEOUT    300
+
 const char* TAG = "SERVER";
 
 #define MAX_TX_BUF_SIZE (1024 * 8)
 #define MAX_RX_BUF_SIZE (1024 * 8)
 
-typedef struct RpcServerContextTag {
+typedef struct {
     RpcRequestHandler* request_handler;
     uint8_t tx_buf[MAX_TX_BUF_SIZE];
     uint8_t rx_buf[MAX_RX_BUF_SIZE];
+    TaskHandle_t thread;
+    bool is_closed;
 } RpcServerContext;
 
 static RpcServerContext s_context;
@@ -35,14 +43,32 @@ static int handle_buffer(uint8_t* rx_buf, size_t* recv_size, size_t* size_to_sen
 int RpcServer_init(RpcRequestHandler* request_handler)
 {
     s_context.request_handler = request_handler;
+    s_context.thread = NULL;
+    s_context.is_closed = false;
     return 0;
 }
 
 int RpcServer_start()
 {
-    xTaskCreate(tcp_server_task, "rpc-server", 1024 * 8, NULL, tskIDLE_PRIORITY + 5, NULL);
-
+    assert(!s_context.is_closed);
+    xTaskCreate(tcp_server_task, "rpc-server", 1024 * 8, NULL, tskIDLE_PRIORITY + 5, &s_context.thread);
     return 0;
+}
+
+int RpcServer_stop()
+{
+    assert(!s_context.is_closed);
+    assert(s_context.thread != NULL);
+    return -1;
+}
+
+int RpcServer_close()
+{
+    assert(!s_context.is_closed);
+    assert(s_context.thread == NULL);
+    s_context.is_closed = true;
+    // TODO
+    return -1;
 }
 
 static void tcp_server_task(void* pvParameters)
@@ -65,6 +91,7 @@ static void tcp_server_task(void* pvParameters)
         return;
     }
     ESP_LOGI(TAG, "Socket created");
+
 
     int err = bind(listen_sock, (struct sockaddr*)&dest_addr, sizeof(dest_addr));
     if (err != 0) {
@@ -90,18 +117,21 @@ static void tcp_server_task(void* pvParameters)
         }
         ESP_LOGI(TAG, "Socket accepted");
 
+        // 设置超时时间
+        struct timeval send_timeout = { SEND_TIMEOUT, 0 }; // 发送超时
+        struct timeval recv_timeout = { RECV_TIMEOUT, 0 }; // 接收超时
+        err = setsockopt(client_sock, SOL_SOCKET, SO_SNDTIMEO, &send_timeout, sizeof(send_timeout));
+        err = setsockopt(client_sock, SOL_SOCKET, SO_RCVTIMEO, &recv_timeout, sizeof(recv_timeout));
+
         size_t rxbuf_size = 0;
         memset(s_context.rx_buf, 0, sizeof(MAX_RX_BUF_SIZE));
         while (1) {
             ssize_t received_size = recv(client_sock, s_context.rx_buf + rxbuf_size, MAX_RX_BUF_SIZE - rxbuf_size, 0);
             // Error occurred during receiving
             if (received_size < 0) {
-                ESP_LOGE(TAG, "recv failed: errno %d", errno);
+                ESP_LOGE(TAG, "recv() failed: errno %d", errno);
                 break;
-            }
-            // Connection closed
-            else if (received_size == 0) {
-                ESP_LOGI(TAG, "Connection closed");
+            } else if (received_size == 0) { // 连接正常关闭
                 break;
             }
             // Data received

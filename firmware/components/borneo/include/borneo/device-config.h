@@ -17,6 +17,16 @@ extern "C" {
 #define BORNEO_DEVICE_UDP_PORT 9060
 #define BORNEO_DEVICE_TCP_PORT 1022
 
+typedef struct {
+    const char* device_name;
+    const char* manufacturer_name;
+    const char* manufacturer_id;
+    const char* model_name;
+    const char* model_id;
+    const char* compatible;
+    const char* kind;
+} BorneoDeviceConfig;
+
 #ifdef __cplusplus
 }
 #endif
