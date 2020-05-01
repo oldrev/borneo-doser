@@ -19,6 +19,8 @@ static void rtc_task();
 
 static struct tm s_now;
 
+#define TAG "RTC"
+
 int Rtc_init()
 {
     memset(&s_now, 0, sizeof(s_now));
@@ -33,7 +35,12 @@ int Rtc_start()
 
 struct tm Rtc_local_now() { return s_now; }
 
-time_t Rtc_timestamp() { return mktime(&s_now); }
+time_t Rtc_timestamp()
+{
+    // 返回当前时间 timestamp
+    ESP_LOGI(TAG, ">>>>>>>>>>>>>>>>>>>>>> %d", (int)mktime(&s_now));
+    return mktime(&s_now);
+}
 
 void Rtc_set_datetime(const struct tm* dt)
 {

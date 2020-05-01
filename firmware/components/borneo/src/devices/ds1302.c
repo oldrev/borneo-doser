@@ -20,15 +20,18 @@
 #define PIN_CLK 14
 #define PIN_IO 12
 
-#define DS1302_REG_SECONDS 0x80
-#define DS1302_REG_MINUTES 0x82
-#define DS1302_REG_HOUR 0x84
-#define DS1302_REG_DATE 0x86
-#define DS1302_REG_MONTH 0x88
-#define DS1302_REG_DAY 0x8A
-#define DS1302_REG_YEAR 0x8C
-#define DS1302_REG_WP 0x8E
-#define DS1302_REG_BURST 0xBE
+enum {
+    DS1302_REG_SECONDS = 0x80,
+    DS1302_REG_MINUTES = 0x82,
+    DS1302_REG_HOUR = 0x84,
+    DS1302_REG_DATE = 0x86,
+    DS1302_REG_MONTH = 0x88,
+    DS1302_REG_DAY = 0x8A,
+    DS1302_REG_YEAR = 0x8C,
+    DS1302_REG_WP = 0x8E,
+    DS1302_REG_BURST = 0xBE,
+    DS1302_REG_TRICKLE_CHARGER = 0x90
+};
 
 static void begin_read(uint8_t address);
 static void begin_write(uint8_t address);
@@ -62,6 +65,14 @@ int DS1302_init()
 
     gpio_set_level(PIN_CE, 0);
     gpio_set_level(PIN_CLK, 0);
+
+    // 为超级电容打开涓流充电器，如果是锂电池，需要不同的参数
+    // Maximum 1 Diode, 2kOhm
+    DS1302_set_trickle_charger(0xA5); 
+
+    // 充电电池参考下面的参数
+    // Minimum 2 Diodes, 8kOhm
+    // DS1302_set_trickle_charger(0xAB);
 
     return 0;
 }
@@ -117,6 +128,13 @@ void DS1302_halt()
     end_io();
 }
 
+void DS1302_set_trickle_charger(uint8_t value)
+{
+    begin_write(DS1302_REG_TRICKLE_CHARGER);
+    write_byte(value);
+    end_io();
+}
+
 static void begin_read(uint8_t address)
 {
     gpio_set_direction(PIN_IO, GPIO_MODE_OUTPUT);
@@ -134,7 +152,11 @@ static void begin_write(uint8_t address)
     write_byte(command);
 }
 
-static void end_io() { gpio_set_level(PIN_CE, 0); }
+static void end_io()
+{
+    // CE 脚设置低电平
+    gpio_set_level(PIN_CE, 0);
+}
 
 static uint8_t read_byte()
 {
