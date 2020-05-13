@@ -31,7 +31,7 @@ void FastPid_reset(FastPid* pid);
 bool FastPid_configure(FastPid* pid, float kp, float ki, float kd, float hz, int bits, bool sign);
 int16_t FastPid_step(FastPid* pid, int16_t sp, int16_t fb);
 
-inline bool FastPid_error(const FastPid* pid) { return pid->cfg_err; }
+inline bool FastPid_has_error(const FastPid* pid) { return pid->cfg_err; }
 
 #ifdef __cplusplus
 }
