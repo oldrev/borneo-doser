@@ -77,11 +77,12 @@ async def test_all_methods():
     response = await invoke_many_async([
         {'method': 'sys.hello', 'params': []},
         {'method': 'doser.status', 'params': []},
-        {'method': 'doser.status', 'params': []},
+        {'method': 'sys.hello', 'params': []},
         {'method': 'doser.status', 'params': []},
     ])
 
     print(response)
+    return
 
     response = await invoke_async('doser.status', [0, 3000])
     print('---------------------------------------')
