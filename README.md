@@ -3,6 +3,7 @@ An ESP32 based open source WiFi doser
 
 ![3D design](3d-design.png)
 
+![doser-working](doser-working.jpg)
 
 ## License
 
